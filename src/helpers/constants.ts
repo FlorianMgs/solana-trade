@@ -1,0 +1,2 @@
+export const LAMPORTS_TO_MICROLAMPORTS = 1e6;
+export const BASE_COMPUTE_UNITS = 1e6;

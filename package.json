@@ -1,0 +1,25 @@
+{
+  "name": "solana-trade",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Solana project using TypeScript",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@pump-fun/pump-sdk": "^1.18.5",
+    "@pump-fun/pump-swap-sdk": "^1.7.3",
+    "@solana/web3.js": "^1.98.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
