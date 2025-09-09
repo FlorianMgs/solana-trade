@@ -1,2 +1,22 @@
 export const LAMPORTS_TO_MICROLAMPORTS = 1e6;
 export const BASE_COMPUTE_UNITS = 1e6;
+
+export const markets = {
+  PUMP_FUN: 'PUMP_FUN',
+  PUMP_SWAP: 'PUMP_SWAP',
+  RAYDIUM_AMM: 'RAYDIUM_AMM',
+  RAYDIUM_CLMM: 'RAYDIUM_CLMM',
+  RAYDIUM_CPMM: 'RAYDIUM_CPMM',
+  RAYDIUM_LAUNCHPAD: 'RAYDIUM_LAUNCHPAD',
+  METEORA_DLMM: 'METEORA_DLMM',
+  METEORA_DAMM_V1: 'METEORA_DAMM_V1',
+}
+
+export const swapDirection = {
+  BUY: 'buy',
+  SELL: 'sell',
+}
+
+export const mints = {
+  WSOL: 'So11111111111111111111111111111111111111112',
+}
