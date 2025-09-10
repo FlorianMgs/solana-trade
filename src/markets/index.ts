@@ -6,5 +6,7 @@ export { RaydiumCpmmClient } from './raydium-cpmm/client';
 export { RaydiumLaunchpadClient } from './raydium-launchpad/client';
 export { MeteoraDlmmClient } from './meteora-dlmm/client';
 export { MeteoraDammV1Client } from './meteora-damm-v1/client';
+export { MeteoraDammV2Client } from './meteora-damm-v2/client';
+export { MeteoraDbcClient } from './meteora-dbc/client';
 
 

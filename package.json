@@ -13,8 +13,10 @@
     "cli": "node -r dotenv/config dist/cli.js"
   },
   "dependencies": {
+    "@meteora-ag/cp-amm-sdk": "^1.1.1",
     "@meteora-ag/dlmm": "^1.7.3",
     "@meteora-ag/dynamic-amm-sdk": "^1.4.1",
+    "@meteora-ag/dynamic-bonding-curve-sdk": "^1.4.0",
     "@pump-fun/pump-sdk": "^1.18.5",
     "@pump-fun/pump-swap-sdk": "^1.7.3",
     "@raydium-io/raydium-sdk-v2": "^0.2.23-alpha",
