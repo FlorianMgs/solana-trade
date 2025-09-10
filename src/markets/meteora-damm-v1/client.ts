@@ -50,7 +50,7 @@ export class MeteoraDammV1Client {
 
     // Fetch using include_token_mints (token + WSOL), one call only
     const base = 'https://damm-api.meteora.ag/pools/search';
-    const qs = `page=0&size=1000&pool_type=dynamic&include_token_mints=${encodeURIComponent(tokenMint)}&include_token_mints=${encodeURIComponent(otherMint)}`;
+    const qs = `page=0&size=300&pool_type=dynamic&include_token_mints=${encodeURIComponent(tokenMint)}&include_token_mints=${encodeURIComponent(otherMint)}`;
     const res = await fetch(`${base}?${qs}`, { method: 'GET' });
     if (!res.ok) throw new Error(`DAMM v1 API status ${res.status}`);
     const json: any = await res.json();

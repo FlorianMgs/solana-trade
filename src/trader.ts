@@ -6,8 +6,9 @@ import { StandardClient } from './senders/standard';
 export class SolanaTrade {
   private readonly connection: Connection;
 
-  constructor(rpcUrl: string = process.env.RPC_URL || 'https://api.mainnet-beta.solana.com') {
-    this.connection = new Connection(rpcUrl, 'processed');
+  constructor(rpcUrl?: string) {
+    const url = rpcUrl || process.env.RPC_URL || 'https://api.mainnet-beta.solana.com';
+    this.connection = new Connection(url, 'processed');
   }
 
   async buy(params: {

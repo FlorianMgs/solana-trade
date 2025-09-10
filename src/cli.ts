@@ -44,7 +44,7 @@ async function main() {
     const secret = bs58.decode(pk58);
     const wallet = Keypair.fromSecretKey(secret);
 
-    const trade = new SolanaTrade(process.env.RPC_URL);
+    const trade = new SolanaTrade(process.env.RPC_URL || undefined);
 
     if (direction === SwapDirection.BUY) {
       const sig = await trade.buy({ market, wallet, mint, amount, slippage, priorityFeeSol, tipAmountSol });
