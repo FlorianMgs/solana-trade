@@ -1,74 +1,34 @@
 import { Connection, PublicKey, TransactionInstruction, LAMPORTS_PER_SOL, ComputeBudgetProgram } from '@solana/web3.js';
 import BN from 'bn.js';
 import AmmImpl from '@meteora-ag/dynamic-amm-sdk/dist/cjs/src/amm';
-import fs from 'fs';
-import path from 'path';
 import { mints } from '../../helpers/constants';
+import { makePairKey, readPair, writePair } from '../../helpers/disk-cache';
 
 export class MeteoraDammV1Client {
   private readonly connection: Connection;
-  private static CACHE_TTL_MS_DEFAULT = 5 * 60 * 1000;
-  private static pairCache: Map<string, { data: any[]; loadedAt: number }> = new Map();
 
   constructor(connection: Connection) {
     this.connection = connection;
   }
 
-  private static getCacheTtlMs(): number {
-    const fromEnv = Number(process.env.PAIRS_CACHE_TTL_MS);
-    return Number.isFinite(fromEnv) && fromEnv > 0 ? fromEnv : MeteoraDammV1Client.CACHE_TTL_MS_DEFAULT;
-  }
-
-  private static getPairCacheKey(a: string, b: string): string {
-    const [x, y] = [a, b].sort();
-    return `${x}-${y}`;
-  }
-
-  private static getPairCacheFile(pairKey: string): string {
-    return path.resolve(process.cwd(), '.cache', `damm_v1_pools_${pairKey}.json`);
-  }
-
-  private async fetchPoolsForTokenPair(tokenMint: string, otherMint: string): Promise<any[]> {
-    const now = Date.now();
-    const pairKey = MeteoraDammV1Client.getPairCacheKey(tokenMint, otherMint);
-    const mem = MeteoraDammV1Client.pairCache.get(pairKey);
-    if (mem && now - mem.loadedAt < MeteoraDammV1Client.getCacheTtlMs()) return mem.data;
-
-    // Try disk cache
-    const cacheFile = MeteoraDammV1Client.getPairCacheFile(pairKey);
-    try {
-      const stat = fs.existsSync(cacheFile) ? fs.statSync(cacheFile) : null;
-      if (stat && now - stat.mtimeMs < MeteoraDammV1Client.getCacheTtlMs()) {
-        const txt = fs.readFileSync(cacheFile, 'utf8');
-        const data = JSON.parse(txt);
-        if (Array.isArray(data)) {
-          MeteoraDammV1Client.pairCache.set(pairKey, { data, loadedAt: now });
-          return data;
-        }
-      }
-    } catch {}
-
-    // Fetch using include_token_mints (token + WSOL), one call only
+  private async fetchPoolsViaSearch(tokenMint: string, otherMint: string): Promise<any[]> {
     const base = 'https://damm-api.meteora.ag/pools/search';
     const qs = `page=0&size=300&pool_type=dynamic&include_token_mints=${encodeURIComponent(tokenMint)}&include_token_mints=${encodeURIComponent(otherMint)}`;
     const res = await fetch(`${base}?${qs}`, { method: 'GET' });
     if (!res.ok) throw new Error(`DAMM v1 API status ${res.status}`);
     const json: any = await res.json();
     const items: any[] = Array.isArray(json?.data) ? json.data : [];
-
-    MeteoraDammV1Client.pairCache.set(pairKey, { data: items, loadedAt: now });
-    try {
-      const dir = path.dirname(cacheFile);
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(cacheFile, JSON.stringify(items));
-    } catch {}
     return items;
   }
 
   private async findPoolAddressForMint(mint: PublicKey): Promise<PublicKey> {
     const token = mint.toBase58();
     const wsol = mints.WSOL;
-    const items = await this.fetchPoolsForTokenPair(token, wsol);
+    const pairKey = makePairKey(token, wsol);
+    const cached = readPair('damm_v1', pairKey);
+    if (cached?.address) return new PublicKey(cached.address);
+
+    const items = await this.fetchPoolsViaSearch(token, wsol);
     // Subset by exact mints (pool_token_mints contains 2 mints)
     const subset = items.filter((it: any) => Array.isArray(it.pool_token_mints) && it.pool_token_mints.length === 2 && (
       (it.pool_token_mints[0] === token && it.pool_token_mints[1] === wsol) ||
@@ -85,6 +45,7 @@ export class MeteoraDammV1Client {
       return acc;
     }, null);
     if (!best?.address) throw new Error('Meteora DAMM v1 pool address not found');
+    writePair('damm_v1', pairKey, best.address);
     return new PublicKey(best.address);
   }
 
@@ -121,5 +82,3 @@ export class MeteoraDammV1Client {
     return this.stripNonEssentialInstructions((tx as any).instructions as TransactionInstruction[]);
   }
 }
-
-// code here

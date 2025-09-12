@@ -2,8 +2,7 @@ import { Connection, PublicKey, TransactionInstruction, LAMPORTS_PER_SOL, Comput
 import BN from 'bn.js';
 import { CpAmm, getTokenDecimals, getTokenProgram } from '@meteora-ag/cp-amm-sdk';
 import { mints } from '../../helpers/constants';
-import fs from 'fs';
-import path from 'path';
+import { makePairKey, readPair, writePair, readGlobal, writeGlobal } from '../../helpers/disk-cache';
 
 type DammV2Pool = {
   pool_address: string;
@@ -17,25 +16,9 @@ type DammV2Pool = {
 
 export class MeteoraDammV2Client {
   private readonly connection: Connection;
-  private static CACHE_TTL_MS_DEFAULT = 5 * 60 * 1000;
-  private static pairCache: Map<string, { data: DammV2Pool[]; loadedAt: number }> = new Map();
 
   constructor(connection: Connection) {
     this.connection = connection;
-  }
-
-  private static getCacheTtlMs(): number {
-    const fromEnv = Number(process.env.PAIRS_CACHE_TTL_MS);
-    return Number.isFinite(fromEnv) && fromEnv > 0 ? fromEnv : MeteoraDammV2Client.CACHE_TTL_MS_DEFAULT;
-  }
-
-  private static getPairCacheKey(a: string, b: string): string {
-    const [x, y] = [a, b].sort();
-    return `${x}-${y}`;
-  }
-
-  private static getPairCacheFile(pairKey: string): string {
-    return path.resolve(process.cwd(), '.cache', `damm_v2_pools_${pairKey}.json`);
   }
 
   private async queryPools(params: Record<string, string | number | boolean | undefined>): Promise<DammV2Pool[]> {
@@ -52,45 +35,35 @@ export class MeteoraDammV2Client {
   }
 
   private async fetchPoolsForTokenPair(tokenMint: string, otherMint: string): Promise<DammV2Pool[]> {
-    const now = Date.now();
-    const pairKey = MeteoraDammV2Client.getPairCacheKey(tokenMint, otherMint);
-    const mem = MeteoraDammV2Client.pairCache.get(pairKey);
-    if (mem && now - mem.loadedAt < MeteoraDammV2Client.getCacheTtlMs()) return mem.data;
-
-    const cacheFile = MeteoraDammV2Client.getPairCacheFile(pairKey);
-    try {
-      const stat = fs.existsSync(cacheFile) ? fs.statSync(cacheFile) : null;
-      if (stat && now - stat.mtimeMs < MeteoraDammV2Client.getCacheTtlMs()) {
-        const txt = fs.readFileSync(cacheFile, 'utf8');
-        const data = JSON.parse(txt);
-        if (Array.isArray(data)) {
-          MeteoraDammV2Client.pairCache.set(pairKey, { data, loadedAt: now });
-          return data as DammV2Pool[];
-        }
-      }
-    } catch {}
-
     // Query both directions explicitly; API uses field-specific filters
     const limit = 300;
     const [aThenB, bThenA] = await Promise.all([
       this.queryPools({ token_a_mint: tokenMint, token_b_mint: otherMint, limit }),
       this.queryPools({ token_a_mint: otherMint, token_b_mint: tokenMint, limit }),
     ]);
-
     // Deduplicate by pool address
     const map = new Map<string, DammV2Pool>();
     for (const it of [...aThenB, ...bThenA]) {
       if (it?.pool_address) map.set(it.pool_address, it);
     }
-    const items = Array.from(map.values());
+    return Array.from(map.values());
+  }
 
-    MeteoraDammV2Client.pairCache.set(pairKey, { data: items, loadedAt: now });
-    try {
-      const dir = path.dirname(cacheFile);
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(cacheFile, JSON.stringify(items));
-    } catch {}
-    return items;
+  private async fetchAllPoolsPaginated(): Promise<DammV2Pool[]> {
+    const limit = 500;
+    let offset = 0;
+    const results: DammV2Pool[] = [];
+    while (true) {
+      const batch = await this.queryPools({ limit, offset });
+      if (!Array.isArray(batch) || batch.length === 0) break;
+      results.push(...batch);
+      if (batch.length < limit) break;
+      offset += limit;
+    }
+    // Deduplicate by pool address
+    const map = new Map<string, DammV2Pool>();
+    for (const it of results) if (it?.pool_address) map.set(it.pool_address, it);
+    return Array.from(map.values());
   }
 
   private chooseBestPool(items: DammV2Pool[], targetMint: string, wsolMint: string): DammV2Pool | null {
@@ -116,9 +89,33 @@ export class MeteoraDammV2Client {
   private async findPoolAddressForMint(mint: PublicKey): Promise<PublicKey> {
     const token = mint.toBase58();
     const wsol = mints.WSOL;
+    const pairKey = makePairKey(token, wsol);
+    const cached = readPair('damm_v2', pairKey);
+    if (cached?.address) return new PublicKey(cached.address);
+
+    // Try global cache first
+    let global = readGlobal('damm_v2');
+    if (!global) {
+      try {
+        global = await this.fetchAllPoolsPaginated();
+        writeGlobal('damm_v2', global);
+      } catch (_e) {
+        global = null;
+      }
+    }
+    if (global) {
+      const bestFromGlobal = this.chooseBestPool(global as DammV2Pool[], token, wsol);
+      if (bestFromGlobal?.pool_address) {
+        writePair('damm_v2', pairKey, bestFromGlobal.pool_address);
+        return new PublicKey(bestFromGlobal.pool_address);
+      }
+    }
+
+    // Fallback: filtered query for the pair
     const items = await this.fetchPoolsForTokenPair(token, wsol);
     const best = this.chooseBestPool(items, token, wsol);
     if (!best?.pool_address) throw new Error('Meteora DAMM v2 pool for mint-WSOL not found');
+    writePair('damm_v2', pairKey, best.pool_address);
     return new PublicKey(best.pool_address);
   }
 

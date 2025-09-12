@@ -12,6 +12,8 @@ export const markets = {
   METEORA_DAMM_V1: 'METEORA_DAMM_V1',
   METEORA_DAMM_V2: 'METEORA_DAMM_V2',
   METEORA_DBC: 'METEORA_DBC',
+  ORCA_WHIRLPOOL: 'ORCA_WHIRLPOOL',
+  MOONIT: 'MOONIT',
 }
 
 export const swapDirection = {

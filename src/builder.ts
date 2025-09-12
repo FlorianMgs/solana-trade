@@ -11,6 +11,8 @@ import { MeteoraDlmmClient } from './markets/meteora-dlmm/client';
 import { MeteoraDammV1Client } from './markets/meteora-damm-v1/client';
 import { MeteoraDammV2Client } from './markets/meteora-damm-v2/client';
 import { MeteoraDbcClient } from './markets/meteora-dbc/client';
+import { OrcaWhirlpoolClient } from './markets/orca-whirlpool/client';
+import { MoonitClient } from './markets/moonit/client';
 import { BuildTransactionParams } from './interfaces/transaction-builder';
 
 /**
@@ -110,6 +112,10 @@ function createMarketClient(connection: Connection, market: string): MarketClien
       return new MeteoraDammV2Client(connection) as unknown as MarketClient;
     case Markets.METEORA_DBC:
       return new MeteoraDbcClient(connection) as unknown as MarketClient;
+    case Markets.ORCA_WHIRLPOOL:
+      return new OrcaWhirlpoolClient(connection) as unknown as MarketClient;
+    case Markets.MOONIT:
+      return new MoonitClient(connection) as unknown as MarketClient;
     default:
       throw new Error(`Unsupported market: ${market}`);
   }

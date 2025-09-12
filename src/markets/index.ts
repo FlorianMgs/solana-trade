@@ -8,5 +8,7 @@ export { MeteoraDlmmClient } from './meteora-dlmm/client';
 export { MeteoraDammV1Client } from './meteora-damm-v1/client';
 export { MeteoraDammV2Client } from './meteora-damm-v2/client';
 export { MeteoraDbcClient } from './meteora-dbc/client';
+export { OrcaWhirlpoolClient } from './orca-whirlpool/client';
+export { MoonitClient } from './moonit/client';
 
 
