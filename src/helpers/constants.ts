@@ -14,6 +14,7 @@ export const markets = {
   METEORA_DBC: 'METEORA_DBC',
   ORCA_WHIRLPOOL: 'ORCA_WHIRLPOOL',
   MOONIT: 'MOONIT',
+  HEAVEN: 'HEAVEN',
 }
 
 export const swapDirection = {
