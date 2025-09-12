@@ -12,5 +12,6 @@ export { OrcaWhirlpoolClient } from './orca-whirlpool/client';
 export { MoonitClient } from './moonit/client';
 export { HeavenClient } from './heaven-xyz/client';
 export { SugarClient } from './sugar/client';
+export { BoopFunClient } from './boop-fun/client';
 
 

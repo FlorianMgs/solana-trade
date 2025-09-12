@@ -1,0 +1,1623 @@
+/**
+ * Program IDL in camelCase format in order to be used in JS/TS.
+ *
+ * Note that this is only a type helper and is not the actual IDL. The original
+ * IDL can be found at `target/idl/fee_splitter.json`.
+ */
+export type FeeSplitter = {
+  "address": "boopEYztaEYSnajfMtjcRysyzyRcchgKsPboRZEbnJi",
+  "metadata": {
+    "name": "feeSplitter",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Trading fee splitter"
+  },
+  "instructions": [
+    {
+      "name": "addOperators",
+      "discriminator": [
+        165,
+        199,
+        62,
+        214,
+        81,
+        54,
+        4,
+        150
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "operators",
+          "type": {
+            "vec": "pubkey"
+          }
+        }
+      ]
+    },
+    {
+      "name": "cancelAuthorityTransfer",
+      "discriminator": [
+        94,
+        131,
+        125,
+        184,
+        183,
+        24,
+        125,
+        229
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claim",
+      "discriminator": [
+        62,
+        198,
+        214,
+        193,
+        213,
+        159,
+        108,
+        210
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vaultAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "creatorVaultAuthority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  114,
+                  101,
+                  97,
+                  116,
+                  111,
+                  114,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "wsol",
+          "address": "So11111111111111111111111111111111111111112"
+        },
+        {
+          "name": "creatorVaultAuthorityWsolVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "creatorVaultAuthority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wsol"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "creatorWsolVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "creator"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wsol"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "creatorVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "creator"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "completeAuthorityTransfer",
+      "discriminator": [
+        81,
+        233,
+        91,
+        132,
+        175,
+        31,
+        151,
+        141
+      ],
+      "accounts": [
+        {
+          "name": "pendingAuthority",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "distribute",
+      "discriminator": [
+        191,
+        44,
+        223,
+        207,
+        164,
+        236,
+        126,
+        61
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "wsol",
+          "address": "So11111111111111111111111111111111111111112"
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "creatorVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "arg",
+                "path": "creator"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vaultAuthority",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "creatorVaultAuthority",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  114,
+                  101,
+                  97,
+                  116,
+                  111,
+                  114,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "stakingMint",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  98,
+                  111,
+                  111,
+                  112
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                8,
+                234,
+                172,
+                52,
+                136,
+                105,
+                113,
+                138,
+                244,
+                12,
+                193,
+                248,
+                185,
+                64,
+                195,
+                79,
+                132,
+                244,
+                208,
+                253,
+                192,
+                35,
+                206,
+                87,
+                3,
+                244,
+                202,
+                41,
+                77,
+                130,
+                226,
+                101
+              ]
+            }
+          }
+        },
+        {
+          "name": "wsolVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vaultAuthority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wsol"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "creatorVaultAuthorityWsolVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "creatorVaultAuthority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wsol"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "treasuryWsolVault",
+          "writable": true
+        },
+        {
+          "name": "teamWsolVault",
+          "writable": true
+        },
+        {
+          "name": "rewardPool",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                8,
+                234,
+                172,
+                47,
+                61,
+                49,
+                176,
+                47,
+                26,
+                250,
+                46,
+                94,
+                64,
+                137,
+                94,
+                252,
+                145,
+                39,
+                60,
+                109,
+                158,
+                202,
+                84,
+                140,
+                172,
+                8,
+                49,
+                244,
+                47,
+                141,
+                22,
+                138
+              ]
+            }
+          }
+        },
+        {
+          "name": "rewardPoolStakingVault",
+          "writable": true
+        },
+        {
+          "name": "rewardPoolRewardVault",
+          "writable": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "rewardPoolProgram",
+          "address": "boopURdYr29D4C4BX7UWfi7rHQyinzCb4XRac3SHR85"
+        }
+      ],
+      "args": [
+        {
+          "name": "creator",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "initialize",
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "vaultAuthority",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "wsol",
+          "address": "So11111111111111111111111111111111111111112"
+        },
+        {
+          "name": "wsolVault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vaultAuthority"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "wsol"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associatedTokenProgram",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        }
+      ],
+      "args": [
+        {
+          "name": "team",
+          "type": "pubkey"
+        },
+        {
+          "name": "treasury",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "initiateAuthorityTransfer",
+      "discriminator": [
+        210,
+        43,
+        101,
+        215,
+        119,
+        140,
+        106,
+        218
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "newAuthority",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "removeOperators",
+      "discriminator": [
+        42,
+        20,
+        89,
+        83,
+        222,
+        37,
+        4,
+        109
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "operators",
+          "type": {
+            "vec": "pubkey"
+          }
+        }
+      ]
+    },
+    {
+      "name": "updateConfig",
+      "discriminator": [
+        29,
+        158,
+        252,
+        191,
+        10,
+        83,
+        219,
+        99
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "team",
+          "type": "pubkey"
+        },
+        {
+          "name": "treasury",
+          "type": "pubkey"
+        },
+        {
+          "name": "forCreatorBasisPoints",
+          "type": "u16"
+        },
+        {
+          "name": "forStakingBasisPoints",
+          "type": "u16"
+        },
+        {
+          "name": "forTeamBasisPoints",
+          "type": "u16"
+        },
+        {
+          "name": "forTreasuryBasisPoints",
+          "type": "u16"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "config",
+      "discriminator": [
+        155,
+        12,
+        170,
+        224,
+        30,
+        250,
+        204,
+        130
+      ]
+    },
+    {
+      "name": "creatorVault",
+      "discriminator": [
+        200,
+        135,
+        38,
+        98,
+        35,
+        236,
+        238,
+        12
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "authorityTransferCancelledEvent",
+      "discriminator": [
+        192,
+        121,
+        140,
+        224,
+        229,
+        96,
+        13,
+        143
+      ]
+    },
+    {
+      "name": "authorityTransferCompletedEvent",
+      "discriminator": [
+        163,
+        132,
+        217,
+        128,
+        243,
+        92,
+        90,
+        249
+      ]
+    },
+    {
+      "name": "authorityTransferInitiatedEvent",
+      "discriminator": [
+        121,
+        246,
+        95,
+        155,
+        229,
+        109,
+        148,
+        205
+      ]
+    },
+    {
+      "name": "configUpdatedEvent",
+      "discriminator": [
+        245,
+        158,
+        129,
+        99,
+        60,
+        100,
+        214,
+        220
+      ]
+    },
+    {
+      "name": "feeClaimedEvent",
+      "discriminator": [
+        42,
+        25,
+        34,
+        217,
+        30,
+        24,
+        89,
+        139
+      ]
+    },
+    {
+      "name": "feeDistributedEvent",
+      "discriminator": [
+        201,
+        209,
+        73,
+        42,
+        75,
+        232,
+        155,
+        101
+      ]
+    },
+    {
+      "name": "operatorsAddedEvent",
+      "discriminator": [
+        247,
+        58,
+        112,
+        56,
+        203,
+        186,
+        112,
+        152
+      ]
+    },
+    {
+      "name": "operatorsRemovedEvent",
+      "discriminator": [
+        44,
+        72,
+        75,
+        70,
+        151,
+        42,
+        53,
+        89
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "noAuthorityTransferInProgress",
+      "msg": "No authority transfer in progress"
+    },
+    {
+      "code": 6001,
+      "name": "nothingToDistribute",
+      "msg": "Nothing to distribute"
+    },
+    {
+      "code": 6002,
+      "name": "operatorAlreadyAdded",
+      "msg": "Operator already added"
+    },
+    {
+      "code": 6003,
+      "name": "operatorDoesNotExist",
+      "msg": "Operator does not exist"
+    },
+    {
+      "code": 6004,
+      "name": "totalFeesDistributionMustAddUpTo10000",
+      "msg": "Total fees distribution must add up to 10000"
+    },
+    {
+      "code": 6005,
+      "name": "unauthorized",
+      "msg": "unauthorized"
+    }
+  ],
+  "types": [
+    {
+      "name": "authorityTransferCancelledEvent",
+      "type": {
+        "kind": "struct",
+        "fields": []
+      }
+    },
+    {
+      "name": "authorityTransferCompletedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "oldAuthority",
+            "type": "pubkey"
+          },
+          {
+            "name": "newAuthority",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "authorityTransferInitiatedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "oldAuthority",
+            "type": "pubkey"
+          },
+          {
+            "name": "newAuthority",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "config",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "pendingAuthority",
+            "type": "pubkey"
+          },
+          {
+            "name": "operators",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "team",
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "forCreatorBasisPoints",
+            "type": "u16"
+          },
+          {
+            "name": "forStakingBasisPoints",
+            "type": "u16"
+          },
+          {
+            "name": "forTeamBasisPoints",
+            "type": "u16"
+          },
+          {
+            "name": "forTreasuryBasisPoints",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "configUpdatedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "team",
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "forCreatorBasisPoints",
+            "type": "u16"
+          },
+          {
+            "name": "forStakingBasisPoints",
+            "type": "u16"
+          },
+          {
+            "name": "forTeamBasisPoints",
+            "type": "u16"
+          },
+          {
+            "name": "forTreasuryBasisPoints",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "creatorVault",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "feeClaimedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "feeDistributedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "distributeAmountForCreator",
+            "type": "u64"
+          },
+          {
+            "name": "distributeAmountForStaking",
+            "type": "u64"
+          },
+          {
+            "name": "distributeAmountForTeam",
+            "type": "u64"
+          },
+          {
+            "name": "distributeAmountForTreasury",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "operatorsAddedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "operators",
+            "type": {
+              "vec": "pubkey"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "operatorsRemovedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "operators",
+            "type": {
+              "vec": "pubkey"
+            }
+          }
+        ]
+      }
+    }
+  ]
+};

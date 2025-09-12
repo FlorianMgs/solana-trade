@@ -16,6 +16,7 @@ export const markets = {
   MOONIT: 'MOONIT',
   HEAVEN: 'HEAVEN',
   SUGAR: 'SUGAR',
+  BOOP_FUN: 'BOOP_FUN',
 }
 
 export const swapDirection = {
