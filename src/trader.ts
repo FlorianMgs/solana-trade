@@ -1,4 +1,4 @@
-import { Connection, Keypair, PublicKey } from '@solana/web3.js';
+import { Connection, Keypair, PublicKey, Transaction } from '@solana/web3.js';
 import { buildTransaction } from './builder';
 import { markets as Markets, swapDirection as SwapDirection } from './helpers/constants';
 import { StandardClient } from './senders/standard';
@@ -20,7 +20,8 @@ export class SolanaTrade {
     priorityFeeSol?: number;
     tipAmountSol?: number;
     poolAddress?: PublicKey | string;
-  }): Promise<string> {
+    send?: boolean;
+  }): Promise<string | Transaction> {
     return this.trade({ ...params, direction: SwapDirection.BUY });
   }
 
@@ -33,7 +34,8 @@ export class SolanaTrade {
     priorityFeeSol?: number;
     tipAmountSol?: number;
     poolAddress?: PublicKey | string;
-  }): Promise<string> {
+    send?: boolean;
+  }): Promise<string | Transaction> {
     return this.trade({ ...params, direction: SwapDirection.SELL });
   }
 
@@ -47,7 +49,8 @@ export class SolanaTrade {
     priorityFeeSol?: number;
     tipAmountSol?: number;
     poolAddress?: PublicKey | string;
-  }): Promise<string> {
+    send?: boolean;
+  }): Promise<string | Transaction> {
     const {
       market,
       direction,
@@ -55,6 +58,7 @@ export class SolanaTrade {
       amount,
       priorityFeeSol = 0.0001,
       tipAmountSol = 0,
+      send = true,
     } = params;
 
     const mint = this.normalizeMint(params.mint);
@@ -73,6 +77,10 @@ export class SolanaTrade {
       priorityFeeSol,
       tipAmountSol,
     });
+
+    if (!send) {
+      return tx;
+    }
 
     const sender = new StandardClient(this.connection);
     const sig = await sender.sendTransaction(
