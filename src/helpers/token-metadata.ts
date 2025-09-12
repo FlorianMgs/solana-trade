@@ -1,14 +1,7 @@
 import { Connection, PublicKey } from '@solana/web3.js';
+import { TokenMetadata } from '../interfaces/solana';
 
 export const METAPLEX_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
-
-export interface TokenMetadata {
-  name: string;
-  symbol: string;
-  logo: string;
-  totalSupply: number;
-  decimals: number;
-}
 
 export async function getTokenMetadata(connection: Connection, mintAddress: string): Promise<TokenMetadata | null> {
   try {
