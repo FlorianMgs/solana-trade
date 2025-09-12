@@ -11,5 +11,6 @@ export { MeteoraDbcClient } from './meteora-dbc/client';
 export { OrcaWhirlpoolClient } from './orca-whirlpool/client';
 export { MoonitClient } from './moonit/client';
 export { HeavenClient } from './heaven-xyz/client';
+export { SugarClient } from './sugar/client';
 
 

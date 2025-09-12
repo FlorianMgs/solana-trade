@@ -25,7 +25,8 @@
     "@solana/web3.js": "^1.98.4",
     "bn.js": "^5.2.1",
     "bs58": "^5.0.0",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "sugar-money": "^0.1.36"
   },
   "devDependencies": {
     "@types/bn.js": "^5.2.0",

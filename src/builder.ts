@@ -14,6 +14,7 @@ import { MeteoraDbcClient } from './markets/meteora-dbc/client';
 import { OrcaWhirlpoolClient } from './markets/orca-whirlpool/client';
 import { MoonitClient } from './markets/moonit/client';
 import { HeavenClient } from './markets/heaven-xyz/client';
+import { SugarClient } from './markets/sugar/client';
 import { BuildTransactionParams } from './interfaces/transaction-builder';
 
 /**
@@ -119,6 +120,8 @@ function createMarketClient(connection: Connection, market: string): MarketClien
       return new MoonitClient(connection) as unknown as MarketClient;
     case Markets.HEAVEN:
       return new HeavenClient(connection) as unknown as MarketClient;
+    case Markets.SUGAR:
+      return new SugarClient(connection) as unknown as MarketClient;
     default:
       throw new Error(`Unsupported market: ${market}`);
   }
