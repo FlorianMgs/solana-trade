@@ -17,10 +17,10 @@ export class PumpSwapClient {
   }
 
   async getBuyInstructions(params: BuyParams): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, solAmount, slippage } = params;
+    const { mintAddress, wallet, solAmount, slippage, poolAddress } = params;
 
     const sdkSlippagePercent = this.normalizeSlippagePercent(slippage);
-    const poolKey = this.getCanonicalPoolKey(mintAddress);
+    const poolKey = poolAddress ?? this.getCanonicalPoolKey(mintAddress);
     const swapState = await this.sdk.swapSolanaState(poolKey, wallet);
 
     const quoteLamports = this.toLamportsBN(solAmount);
@@ -29,10 +29,10 @@ export class PumpSwapClient {
   }
 
   async getSellInstructions(params: SellParams): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, tokenAmount, slippage } = params;
+    const { mintAddress, wallet, tokenAmount, slippage, poolAddress } = params;
 
     const sdkSlippagePercent = this.normalizeSlippagePercent(slippage);
-    const poolKey = this.getCanonicalPoolKey(mintAddress);
+    const poolKey = poolAddress ?? this.getCanonicalPoolKey(mintAddress);
     const swapState = await this.sdk.swapSolanaState(poolKey, wallet);
 
     const decimals = swapState.baseMintAccount.decimals;

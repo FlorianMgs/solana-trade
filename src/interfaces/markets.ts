@@ -6,6 +6,7 @@ export interface BuyParams {
   wallet: PublicKey;
   solAmount: number; // in SOL
   slippage: number; // 0..1 fraction (e.g. 0.01 for 1%)
+  poolAddress?: PublicKey;
 }
 
 export interface SellParams {
@@ -13,4 +14,5 @@ export interface SellParams {
   wallet: PublicKey;
   tokenAmount: number; // in tokens (decimals=6)
   slippage: number; // 0..1 fraction (e.g. 0.01 for 1%)
+  poolAddress?: PublicKey;
 }

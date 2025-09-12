@@ -86,17 +86,23 @@ export class OrcaWhirlpoolClient {
     return buildWhirlpoolClient(ctx);
   }
 
-  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, solAmount, slippage } = params;
+  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
+    const { mintAddress, wallet, solAmount, slippage, poolAddress } = params;
     const wsol = new PublicKey('So11111111111111111111111111111111111111112');
-    const whirlpoolPk = await this.resolveWhirlpoolForPair(mintAddress, wsol);
+    const whirlpoolPk = poolAddress ?? await this.resolveWhirlpoolForPair(mintAddress, wsol);
 
     const sdk = this.buildSdk(wallet);
     const whirlpool = await sdk.getPool(whirlpoolPk);
 
-    // Determine direction: aToB = true means token A -> token B
+    // Validate tokens include mint and WSOL
     const tokenA = whirlpool.getTokenAInfo();
     const tokenB = whirlpool.getTokenBInfo();
+    const mintsInPool = [tokenA.mint.toBase58(), tokenB.mint.toBase58()];
+    if (!mintsInPool.includes(mintAddress.toBase58()) || !mintsInPool.includes(wsol.toBase58())) {
+      throw new Error('Incompatible poolAddress for Orca Whirlpool: expected token-WSOL pair');
+    }
+
+    // Determine direction: aToB = true means token A -> token B
     const aIsWSOL = tokenA.mint.equals(wsol);
     const inputIsA = aIsWSOL; // buy target token using WSOL
     const aToB = inputIsA; // if input is A, A->B, else B->A
@@ -132,16 +138,21 @@ export class OrcaWhirlpoolClient {
     return this.stripNonEssentialInstructions(combined);
   }
 
-  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, tokenAmount, slippage } = params;
+  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
+    const { mintAddress, wallet, tokenAmount, slippage, poolAddress } = params;
     const wsol = new PublicKey('So11111111111111111111111111111111111111112');
-    const whirlpoolPk = await this.resolveWhirlpoolForPair(mintAddress, wsol);
+    const whirlpoolPk = poolAddress ?? await this.resolveWhirlpoolForPair(mintAddress, wsol);
 
     const sdk = this.buildSdk(wallet);
     const whirlpool = await sdk.getPool(whirlpoolPk);
 
     const tokenA = whirlpool.getTokenAInfo();
     const tokenB = whirlpool.getTokenBInfo();
+    const mintsInPool = [tokenA.mint.toBase58(), tokenB.mint.toBase58()];
+    if (!mintsInPool.includes(mintAddress.toBase58()) || !mintsInPool.includes(wsol.toBase58())) {
+      throw new Error('Incompatible poolAddress for Orca Whirlpool: expected token-WSOL pair');
+    }
+
     const sellingIsA = tokenA.mint.equals(mintAddress);
     const decimals = sellingIsA ? tokenA.decimals : tokenB.decimals;
     const amount = new BN(Math.round(tokenAmount * Math.pow(10, decimals)));

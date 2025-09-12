@@ -19,6 +19,7 @@ export class SolanaTrade {
     slippage: number; // 0..100
     priorityFeeSol?: number;
     tipAmountSol?: number;
+    poolAddress?: PublicKey | string;
   }): Promise<string> {
     return this.trade({ ...params, direction: SwapDirection.BUY });
   }
@@ -31,6 +32,7 @@ export class SolanaTrade {
     slippage: number; // 0..100
     priorityFeeSol?: number;
     tipAmountSol?: number;
+    poolAddress?: PublicKey | string;
   }): Promise<string> {
     return this.trade({ ...params, direction: SwapDirection.SELL });
   }
@@ -44,6 +46,7 @@ export class SolanaTrade {
     slippage: number; // 0..100
     priorityFeeSol?: number;
     tipAmountSol?: number;
+    poolAddress?: PublicKey | string;
   }): Promise<string> {
     const {
       market,
@@ -55,6 +58,7 @@ export class SolanaTrade {
     } = params;
 
     const mint = this.normalizeMint(params.mint);
+    const poolAddress = this.normalizePoolAddress(params.poolAddress);
     const slippageFraction = this.normalizeSlippage(params.slippage);
 
     const tx = await buildTransaction({
@@ -63,6 +67,7 @@ export class SolanaTrade {
       direction,
       wallet,
       mint,
+      poolAddress,
       amount,
       slippage: slippageFraction,
       priorityFeeSol,
@@ -90,6 +95,16 @@ export class SolanaTrade {
     if (!Number.isFinite(slippagePercent)) throw new Error('Invalid slippage');
     const clamped = Math.max(0, Math.min(100, slippagePercent));
     return clamped / 100;
+  }
+
+  private normalizePoolAddress(pool?: PublicKey | string): PublicKey | undefined {
+    if (pool === undefined || pool === null) return undefined;
+    if (pool instanceof PublicKey) return pool;
+    try {
+      return new PublicKey(pool);
+    } catch (_) {
+      throw new Error('Invalid poolAddress');
+    }
   }
 }
 

@@ -18,11 +18,15 @@ export class RaydiumCpmmClient {
     return this.raydiumPromise;
   }
 
-  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, solAmount, slippage } = params;
+  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
+    const { mintAddress, wallet, solAmount, slippage, poolAddress } = params;
     const raydium = await this.getRaydium(wallet);
 
-    const poolInfo: any = await this.findCpmmPoolInfo(raydium, mintAddress);
+    const poolInfo: any = poolAddress
+      ? await this.findCpmmPoolInfoById(raydium, poolAddress)
+      : await this.findCpmmPoolInfo(raydium, mintAddress);
+    this.assertPoolHasMintAndWsol(poolInfo, mintAddress);
+
     const rpc = await raydium.cpmm.getPoolInfoFromRpc(String(poolInfo.id));
     const rpcData = rpc.rpcData;
     const poolKeys = rpc.poolKeys;
@@ -55,11 +59,15 @@ export class RaydiumCpmmClient {
     return make.transaction.instructions;
   }
 
-  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, tokenAmount, slippage } = params;
+  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
+    const { mintAddress, wallet, tokenAmount, slippage, poolAddress } = params;
     const raydium = await this.getRaydium(wallet);
 
-    const poolInfo: any = await this.findCpmmPoolInfo(raydium, mintAddress);
+    const poolInfo: any = poolAddress
+      ? await this.findCpmmPoolInfoById(raydium, poolAddress)
+      : await this.findCpmmPoolInfo(raydium, mintAddress);
+    this.assertPoolHasMintAndWsol(poolInfo, mintAddress);
+
     const rpc = await raydium.cpmm.getPoolInfoFromRpc(String(poolInfo.id));
     const rpcData = rpc.rpcData;
     const poolKeys = rpc.poolKeys;
@@ -117,6 +125,20 @@ export class RaydiumCpmmClient {
     if (!target) throw new Error('Raydium CPMM pool not found for pair');
     return target;
   }
-}
 
-// code here
+  private async findCpmmPoolInfoById(raydium: Raydium, poolAddress: PublicKey) {
+    const resp: any = await raydium.api.fetchPoolById({ ids: poolAddress.toBase58() });
+    const list: any[] = Array.isArray(resp) ? resp : resp?.data || resp?.items || [];
+    if (!list || list.length === 0) throw new Error('Pool not found for provided poolAddress');
+    return list[0];
+  }
+
+  private assertPoolHasMintAndWsol(poolInfo: any, mintAddress: PublicKey) {
+    const token = mintAddress.toBase58();
+    const wsol = new PublicKey(mints.WSOL).toBase58();
+    const pair = [poolInfo?.mintA?.address, poolInfo?.mintB?.address];
+    if (!pair.includes(token) || !pair.includes(wsol)) {
+      throw new Error('Incompatible poolAddress for Raydium CPMM: expected token-WSOL pair');
+    }
+  }
+}

@@ -18,11 +18,14 @@ export class RaydiumAmmClient {
     return this.raydiumPromise;
   }
 
-  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, solAmount, slippage } = params;
+  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
+    const { mintAddress, wallet, solAmount, slippage, poolAddress } = params;
     const raydium = await this.getRaydium(wallet);
 
-    const poolInfo: any = await this.findPoolInfo(raydium, mintAddress);
+    const poolInfo: any = poolAddress
+      ? await this.findPoolInfoById(raydium, poolAddress)
+      : await this.findPoolInfo(raydium, mintAddress);
+    this.assertPoolHasMintAndWsol(poolInfo, mintAddress);
     const poolKeys: any = await raydium.liquidity.getAmmPoolKeys(poolInfo.id);
     const rpcData: any = await raydium.liquidity.getRpcPoolInfo(poolInfo.id);
 
@@ -60,11 +63,14 @@ export class RaydiumAmmClient {
     return make.transaction.instructions;
   }
 
-  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, tokenAmount, slippage } = params;
+  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
+    const { mintAddress, wallet, tokenAmount, slippage, poolAddress } = params;
     const raydium = await this.getRaydium(wallet);
 
-    const poolInfo: any = await this.findPoolInfo(raydium, mintAddress);
+    const poolInfo: any = poolAddress
+      ? await this.findPoolInfoById(raydium, poolAddress)
+      : await this.findPoolInfo(raydium, mintAddress);
+    this.assertPoolHasMintAndWsol(poolInfo, mintAddress);
     const poolKeys: any = await raydium.liquidity.getAmmPoolKeys(poolInfo.id);
     const rpcData: any = await raydium.liquidity.getRpcPoolInfo(poolInfo.id);
 
@@ -109,6 +115,22 @@ export class RaydiumAmmClient {
       throw new Error('Raydium pool not found for pair');
     }
     return list[0];
+  }
+
+  private async findPoolInfoById(raydium: Raydium, poolAddress: PublicKey) {
+    const resp: any = await raydium.api.fetchPoolById({ ids: poolAddress.toBase58() });
+    const list: any[] = Array.isArray(resp) ? resp : resp?.data || resp?.items || [];
+    if (!list || list.length === 0) throw new Error('Pool not found for provided poolAddress');
+    return list[0];
+  }
+
+  private assertPoolHasMintAndWsol(poolInfo: any, mintAddress: PublicKey) {
+    const token = mintAddress.toBase58();
+    const wsol = new PublicKey(mints.WSOL).toBase58();
+    const pair = [poolInfo?.mintA?.address, poolInfo?.mintB?.address];
+    if (!pair.includes(token) || !pair.includes(wsol)) {
+      throw new Error(`Incompatible poolAddress for Raydium AMM: expected token-WSOL pair`);
+    }
   }
 }
 

@@ -68,6 +68,7 @@ export async function buildTransaction(params: BuildTransactionParams): Promise<
     solAmount: amount,
     tokenAmount: amount,
     slippage,
+    poolAddress: params.poolAddress,
   });
 
   for (const ix of marketInstructions) {
@@ -84,12 +85,14 @@ type MarketClient = {
     wallet: PublicKey;
     solAmount: number;
     slippage: number;
+    poolAddress?: PublicKey;
   }) => Promise<TransactionInstruction[]>;
   getSellInstructions: (args: {
     mintAddress: PublicKey;
     wallet: PublicKey;
     tokenAmount: number;
     slippage: number;
+    poolAddress?: PublicKey;
   }) => Promise<TransactionInstruction[]>;
 };
 
@@ -132,23 +135,25 @@ function createMarketClient(connection: Connection, market: string): MarketClien
 
 function createDirectionInvoker(client: MarketClient, direction: string) {
   if (direction === SwapDirection.BUY) {
-    return async ({ mintAddress, wallet, solAmount, slippage }: { 
+    return async ({ mintAddress, wallet, solAmount, slippage, poolAddress }: { 
       mintAddress: PublicKey; 
       wallet: PublicKey; 
       solAmount: number; 
       slippage: number; 
+      poolAddress?: PublicKey;
     }) => {
-      return client.getBuyInstructions({ mintAddress, wallet, solAmount, slippage });
+      return client.getBuyInstructions({ mintAddress, wallet, solAmount, slippage, poolAddress });
     }
   }
   if (direction === SwapDirection.SELL) {
-    return async ({ mintAddress, wallet, tokenAmount, slippage }: { 
+    return async ({ mintAddress, wallet, tokenAmount, slippage, poolAddress }: { 
       mintAddress: PublicKey; 
       wallet: PublicKey; 
       tokenAmount: number; 
       slippage: number; 
+      poolAddress?: PublicKey;
     }) => {
-      return client.getSellInstructions({ mintAddress, wallet, tokenAmount, slippage });
+      return client.getSellInstructions({ mintAddress, wallet, tokenAmount, slippage, poolAddress });
     }
   }
   throw new Error(`Unsupported direction: ${direction}`);

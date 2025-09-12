@@ -9,13 +9,16 @@ export class BoopFunClient {
     this.connection = connection;
   }
 
-  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, solAmount, slippage } = params;
+  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
+    const { mintAddress, wallet, solAmount, slippage, poolAddress } = params;
     this.assertNonNegativeFinite(solAmount, 'solAmount');
     this.assertSlippage(slippage);
 
     const programId = new PublicKey('boop8hVGQGqehUK2iVEMEnMrL5RbjywRzHKBmBE7ry4');
     const bondingCurve = this.findPda(['bonding_curve', mintAddress.toBuffer()], programId);
+    if (poolAddress && !poolAddress.equals(bondingCurve)) {
+      throw new Error('Incompatible poolAddress for Boop: expected bonding curve PDA for mint');
+    }
     const tradingFeesVault = this.findPda(['trading_fees_vault', mintAddress.toBuffer()], programId);
     const bondingCurveVault = this.findPda(['bonding_curve_vault', mintAddress.toBuffer()], programId);
     const bondingCurveSolVault = this.findPda(['bonding_curve_sol_vault', mintAddress.toBuffer()], programId);
@@ -51,13 +54,16 @@ export class BoopFunClient {
     return [createAtaIx, buyIx];
   }
 
-  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, tokenAmount, slippage } = params;
+  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
+    const { mintAddress, wallet, tokenAmount, slippage, poolAddress } = params;
     this.assertNonNegativeFinite(tokenAmount, 'tokenAmount');
     this.assertSlippage(slippage);
 
     const programId = new PublicKey('boop8hVGQGqehUK2iVEMEnMrL5RbjywRzHKBmBE7ry4');
     const bondingCurve = this.findPda(['bonding_curve', mintAddress.toBuffer()], programId);
+    if (poolAddress && !poolAddress.equals(bondingCurve)) {
+      throw new Error('Incompatible poolAddress for Boop: expected bonding curve PDA for mint');
+    }
     const tradingFeesVault = this.findPda(['trading_fees_vault', mintAddress.toBuffer()], programId);
     const bondingCurveVault = this.findPda(['bonding_curve_vault', mintAddress.toBuffer()], programId);
     const vaultAuthority = this.findPda(['vault_authority'], programId);

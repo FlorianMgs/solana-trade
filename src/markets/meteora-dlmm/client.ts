@@ -20,6 +20,25 @@ export class MeteoraDlmmClient {
     return await DLMM.create(this.connection, pair);
   }
 
+  private async getDlmmPoolWithOptionalAddress(mint: PublicKey, poolAddress?: PublicKey): Promise<DLMM> {
+    if (poolAddress) {
+      try {
+        const pool = await DLMM.create(this.connection, poolAddress);
+        const tokenXMint = (pool.tokenX.mint as any).address?.toBase58?.() ?? (pool.tokenX.mint as any).toBase58?.();
+        const tokenYMint = (pool.tokenY.mint as any).address?.toBase58?.() ?? (pool.tokenY.mint as any).toBase58?.();
+        const token = mint.toBase58();
+        const wsol = mints.WSOL;
+        if (!tokenXMint || !tokenYMint || !([tokenXMint, tokenYMint].includes(token) && [tokenXMint, tokenYMint].includes(wsol))) {
+          throw new Error('Incompatible poolAddress for Meteora DLMM: expected token-WSOL pair');
+        }
+        return pool;
+      } catch (e) {
+        throw new Error('Pool not found for provided poolAddress');
+      }
+    }
+    return this.getDlmmPoolForMint(mint);
+  }
+
   private async findMintWsolPair(mint: PublicKey): Promise<PublicKey> {
     const token = mint.toBase58();
     const wsol = mints.WSOL;
@@ -88,9 +107,9 @@ export class MeteoraDlmmClient {
     throw new Error('Meteora DLMM pool for mint-WSOL not found');
   }
 
-  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, solAmount, slippage } = params;
-    const dlmmPool = await this.getDlmmPoolForMint(mintAddress);
+  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
+    const { mintAddress, wallet, solAmount, slippage, poolAddress } = params;
+    const dlmmPool = await this.getDlmmPoolWithOptionalAddress(mintAddress, poolAddress);
 
     const wsolMint = new PublicKey(mints.WSOL).toBase58();
     const isXWsol = (dlmmPool.tokenX.mint as any).address?.toBase58?.() === wsolMint || (dlmmPool.tokenX.mint as any).toBase58?.() === wsolMint;
@@ -118,9 +137,9 @@ export class MeteoraDlmmClient {
     return this.stripNonEssentialInstructions(tx.instructions as TransactionInstruction[]);
   }
 
-  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, tokenAmount, slippage } = params;
-    const dlmmPool = await this.getDlmmPoolForMint(mintAddress);
+  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
+    const { mintAddress, wallet, tokenAmount, slippage, poolAddress } = params;
+    const dlmmPool = await this.getDlmmPoolWithOptionalAddress(mintAddress, poolAddress);
 
     const wsolMint = new PublicKey(mints.WSOL).toBase58();
     const isXWsol = (dlmmPool.tokenX.mint as any).address?.toBase58?.() === wsolMint || (dlmmPool.tokenX.mint as any).toBase58?.() === wsolMint;

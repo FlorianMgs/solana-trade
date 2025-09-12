@@ -11,7 +11,7 @@ export class SugarClient {
     this.connection = connection;
   }
 
-  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
+  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
     const { mintAddress, wallet, solAmount, slippage } = params;
     this.assertNonNegativeFinite(solAmount, 'solAmount');
     this.assertSlippage(slippage);
@@ -32,7 +32,7 @@ export class SugarClient {
     return [tradeInfo.ix];
   }
 
-  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
+  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
     const { mintAddress, wallet, tokenAmount, slippage } = params;
     this.assertNonNegativeFinite(tokenAmount, 'tokenAmount');
     this.assertSlippage(slippage);

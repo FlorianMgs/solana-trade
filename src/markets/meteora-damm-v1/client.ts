@@ -53,10 +53,18 @@ export class MeteoraDammV1Client {
     return ixs.filter(ix => !ix.programId.equals(ComputeBudgetProgram.programId));
   }
 
-  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, solAmount, slippage } = params;
-    const poolAddress = await this.findPoolAddressForMint(mintAddress);
-    const pool = await AmmImpl.create(this.connection as any, poolAddress);
+  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
+    const { mintAddress, wallet, solAmount, slippage, poolAddress } = params;
+    const resolved = poolAddress ?? await this.findPoolAddressForMint(mintAddress);
+    const pool = await AmmImpl.create(this.connection as any, resolved);
+
+    // Validate pool tokens
+    const tokenA = new PublicKey(pool.tokenAMint.address).toBase58();
+    const tokenB = new PublicKey(pool.tokenBMint.address).toBase58();
+    const m = mintAddress.toBase58();
+    if (!([tokenA, tokenB].includes(m) && [tokenA, tokenB].includes(mints.WSOL))) {
+      throw new Error('Incompatible poolAddress for DAMM v1: expected token-WSOL pair');
+    }
 
     const swapAtoB = new PublicKey(pool.tokenAMint.address).toBase58() === mints.WSOL; // A=WSOL -> buy B
     const inAmount = new BN(Math.round(solAmount * LAMPORTS_PER_SOL));
@@ -67,10 +75,17 @@ export class MeteoraDammV1Client {
     return this.stripNonEssentialInstructions((tx as any).instructions as TransactionInstruction[]);
   }
 
-  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, tokenAmount, slippage } = params;
-    const poolAddress = await this.findPoolAddressForMint(mintAddress);
-    const pool = await AmmImpl.create(this.connection as any, poolAddress);
+  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
+    const { mintAddress, wallet, tokenAmount, slippage, poolAddress } = params;
+    const resolved = poolAddress ?? await this.findPoolAddressForMint(mintAddress);
+    const pool = await AmmImpl.create(this.connection as any, resolved);
+
+    const tokenA = new PublicKey(pool.tokenAMint.address).toBase58();
+    const tokenB = new PublicKey(pool.tokenBMint.address).toBase58();
+    const m = mintAddress.toBase58();
+    if (!([tokenA, tokenB].includes(m) && [tokenA, tokenB].includes(mints.WSOL))) {
+      throw new Error('Incompatible poolAddress for DAMM v1: expected token-WSOL pair');
+    }
 
     const sellingX = new PublicKey(pool.tokenAMint.address).toBase58() === mintAddress.toBase58();
     const decimals = sellingX ? pool.tokenAMint.decimals : pool.tokenBMint.decimals;

@@ -6,6 +6,7 @@ export interface BuildTransactionParams {
   direction: string;
   wallet: Keypair;
   mint: PublicKey;
+  poolAddress?: PublicKey;
   amount: number;
   slippage: number; // 0..1
   priorityFeeSol?: number; // default 0.0001

@@ -28,11 +28,26 @@ export class RaydiumLaunchpadClient {
     return { programId, poolId, poolInfo, platformInfo, mintInfo };
   }
 
-  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, solAmount, slippage } = params;
-    const raydium = await this.getRaydium(wallet);
+  private async loadPoolById(raydium: Raydium, poolId: PublicKey, expectedMintA: PublicKey) {
+    const programId = LAUNCHPAD_PROGRAM;
+    const poolInfo = await raydium.launchpad.getRpcPoolInfo({ poolId });
+    if (!poolInfo) throw new Error('Pool not found for provided poolAddress');
+    const platformAcc = await raydium.connection.getAccountInfo(poolInfo.platformId);
+    const platformInfo = PlatformConfig.decode(platformAcc!.data);
+    const mintInfo = await raydium.token.getTokenInfo(expectedMintA);
+    // Validate mintA equals expected and quote is SOL by design of Launchpad
+    if (!poolInfo.mintA.equals(expectedMintA)) {
+      throw new Error('Incompatible poolAddress for Raydium Launchpad: mintA mismatch');
+    }
+    return { programId, poolId, poolInfo, platformInfo, mintInfo };
+  }
 
-    const { programId, poolInfo, platformInfo, mintInfo } = await this.derivePool(raydium, mintAddress);
+  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
+    const { mintAddress, wallet, solAmount, slippage, poolAddress } = params;
+    const raydium = await this.getRaydium(wallet);
+    const { programId, poolInfo, platformInfo, mintInfo } = poolAddress
+      ? await this.loadPoolById(raydium, poolAddress, mintAddress)
+      : await this.derivePool(raydium, mintAddress);
 
     const inAmount = new BN(Math.round(solAmount * LAMPORTS_PER_SOL));
     const slippageBps = new BN(Math.max(0, Math.min(10000, Math.round(slippage * 10000))));
@@ -54,11 +69,12 @@ export class RaydiumLaunchpadClient {
     return make.transaction.instructions;
   }
 
-  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, tokenAmount, slippage } = params;
+  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
+    const { mintAddress, wallet, tokenAmount, slippage, poolAddress } = params;
     const raydium = await this.getRaydium(wallet);
-
-    const { programId, poolInfo, platformInfo, mintInfo } = await this.derivePool(raydium, mintAddress);
+    const { programId, poolInfo, platformInfo, mintInfo } = poolAddress
+      ? await this.loadPoolById(raydium, poolAddress, mintAddress)
+      : await this.derivePool(raydium, mintAddress);
 
     const decimals: number = mintInfo.decimals ?? 6;
     const inAmount = new BN(Math.round(tokenAmount * Math.pow(10, decimals)));

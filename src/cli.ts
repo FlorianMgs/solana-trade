@@ -39,6 +39,7 @@ async function main() {
     const slippage = parseFloat(args['slippage']); // 0..100
     const priorityFeeSol = args['priority-fee'] ? parseFloat(args['priority-fee']) : 0.0001;
     const tipAmountSol = args['tip'] ? parseFloat(args['tip']) : 0;
+    const poolAddress = args['pool-address'];
 
     const pk58 = args['private-key'];
     const secret = bs58.decode(pk58);
@@ -47,12 +48,12 @@ async function main() {
     const trade = new SolanaTrade(process.env.RPC_URL || undefined);
 
     if (direction === SwapDirection.BUY) {
-      const sig = await trade.buy({ market, wallet, mint, amount, slippage, priorityFeeSol, tipAmountSol });
+      const sig = await trade.buy({ market, wallet, mint, amount, slippage, priorityFeeSol, tipAmountSol, poolAddress });
       console.log(sig);
       return;
     }
     if (direction === SwapDirection.SELL) {
-      const sig = await trade.sell({ market, wallet, mint, amount, slippage, priorityFeeSol, tipAmountSol });
+      const sig = await trade.sell({ market, wallet, mint, amount, slippage, priorityFeeSol, tipAmountSol, poolAddress });
       console.log(sig);
       return;
     }

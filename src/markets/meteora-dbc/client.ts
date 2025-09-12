@@ -55,9 +55,22 @@ export class MeteoraDbcClient {
     return { poolAddress, virtualPool, poolConfig };
   }
 
-  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, solAmount, slippage } = params;
-    const { poolAddress, virtualPool, poolConfig } = await this.resolvePoolByBaseMint(mintAddress);
+  private async resolvePoolById(poolAddress: PublicKey): Promise<{ poolAddress: PublicKey; virtualPool: any; poolConfig: any; }> {
+    const client = new DynamicBondingCurveClient(this.connection, 'confirmed');
+    const virtualPool = await client.state.getPool(poolAddress);
+    if (!virtualPool) throw new Error('Pool not found for provided poolAddress');
+    const poolConfig = await client.state.getPoolConfig(virtualPool.config);
+    const quoteMintFromConfig = (poolConfig as any)?.quoteMint?.toBase58?.() ?? String((poolConfig as any)?.quoteMint);
+    if (quoteMintFromConfig !== mints.WSOL) throw new Error('Incompatible poolAddress for Meteora DBC: expected WSOL quote');
+    return { poolAddress, virtualPool, poolConfig };
+  }
+
+  async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
+    const { mintAddress, wallet, solAmount, slippage, poolAddress } = params;
+    const resolved = poolAddress
+      ? await this.resolvePoolById(poolAddress)
+      : await this.resolvePoolByBaseMint(mintAddress);
+    const { poolAddress: poolId, virtualPool, poolConfig } = resolved;
     const dbc = new DynamicBondingCurveClient(this.connection, 'confirmed');
 
     const amountIn = new BN(Math.round(solAmount * LAMPORTS_PER_SOL));
@@ -79,7 +92,7 @@ export class MeteoraDbcClient {
       amountIn,
       minimumAmountOut: quote.minimumAmountOut,
       swapBaseForQuote,
-      pool: poolAddress,
+      pool: poolId,
       referralTokenAccount: null,
       payer: wallet,
     });
@@ -87,9 +100,12 @@ export class MeteoraDbcClient {
     return this.stripNonEssentialInstructions(tx.instructions as TransactionInstruction[]);
   }
 
-  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; }): Promise<TransactionInstruction[]> {
-    const { mintAddress, wallet, tokenAmount, slippage } = params;
-    const { poolAddress, virtualPool, poolConfig } = await this.resolvePoolByBaseMint(mintAddress);
+  async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
+    const { mintAddress, wallet, tokenAmount, slippage, poolAddress } = params;
+    const resolved = poolAddress
+      ? await this.resolvePoolById(poolAddress)
+      : await this.resolvePoolByBaseMint(mintAddress);
+    const { poolAddress: poolId, virtualPool, poolConfig } = resolved;
     const dbc = new DynamicBondingCurveClient(this.connection, 'confirmed');
 
     const baseDecimals: number = Number(poolConfig.tokenDecimal ?? 6);
@@ -112,7 +128,7 @@ export class MeteoraDbcClient {
       amountIn,
       minimumAmountOut: quote.minimumAmountOut,
       swapBaseForQuote,
-      pool: poolAddress,
+      pool: poolId,
       referralTokenAccount: null,
       payer: wallet,
     });
