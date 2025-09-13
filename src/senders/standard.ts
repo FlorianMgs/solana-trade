@@ -8,7 +8,7 @@ import {
 
 import { simulateTransaction as simulateTx, monitorTransactionConfirmation } from '../helpers/transactions';
 
-import { TransactionSenderClient } from '../interfaces/transaction-sender';
+import { TransactionSenderClient, SenderExtras } from '../interfaces/transaction-sender';
 
 /**
  * StandardClient class for sending transactions via standard Solana RPC
@@ -59,7 +59,8 @@ export class StandardClient implements TransactionSenderClient {
     priorityFee: number = 0.0001,
     tipAmount: number = 0.001,
     skipSimulation: boolean = false,
-    options: SendOptions = {}
+    options: SendOptions = {},
+    _extras?: SenderExtras
   ): Promise<string> {
     try {
       // Get a fresh blockhash immediately before sending

@@ -10,7 +10,6 @@ export interface BuildTransactionParams {
   amount: number;
   slippage: number; // 0..1
   priorityFeeSol?: number; // default 0.0001
-  tipAmountSol?: number; // default 0
 }
 
 

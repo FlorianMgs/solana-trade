@@ -1,5 +1,5 @@
-import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
-import { createComputeBudgetInstructions, createTipInstruction } from './helpers/instructions';
+import { Connection, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
+import { createComputeBudgetInstructions } from './helpers/instructions';
 import { markets as Markets, swapDirection as SwapDirection } from './helpers/constants';
 import { PumpFunClient } from './markets/pump-fun/client';
 import { PumpSwapClient } from './markets/pump-swap/client';
@@ -32,7 +32,6 @@ export async function buildTransaction(params: BuildTransactionParams): Promise<
     amount,
     slippage,
     priorityFeeSol = 0.0001,
-    tipAmountSol = 0,
   } = params;
 
   if (slippage < 0 || slippage > 1) {
@@ -45,19 +44,6 @@ export async function buildTransaction(params: BuildTransactionParams): Promise<
   const budgetIx = createComputeBudgetInstructions(priorityFeeSol);
   budgetIx.forEach(ix => tx.add(ix));
 
-  // Optional tip (TIP_ADDRESS via env if provided)
-  if (tipAmountSol > 0) {
-    const tipAddressEnv = process.env.TIP_ADDRESS;
-    if (tipAddressEnv) {
-      try {
-        const tipAddress = new PublicKey(tipAddressEnv);
-        const tipIx = createTipInstruction(tipAddress, wallet.publicKey, tipAmountSol);
-        tx.add(tipIx);
-      } catch (_) {
-        // Ignore invalid TIP_ADDRESS
-      }
-    }
-  }
 
   // Market-specific instructions
   const client = createMarketClient(connection, market);
