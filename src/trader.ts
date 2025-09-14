@@ -41,6 +41,8 @@ export class SolanaTrade {
     sender?: 'ASTRALANE' | 'NOZOMI' | 'JITO';
     antimev?: boolean;
     region?: string;
+    skipSimulation?: boolean;
+    skipConfirmation?: boolean;
   }): Promise<string | Transaction> {
     return this.trade({ ...params, direction: SwapDirection.BUY });
   }
@@ -58,6 +60,8 @@ export class SolanaTrade {
     sender?: 'ASTRALANE' | 'NOZOMI' | 'JITO';
     antimev?: boolean;
     region?: string;
+    skipSimulation?: boolean;
+    skipConfirmation?: boolean;
   }): Promise<string | Transaction> {
     return this.trade({ ...params, direction: SwapDirection.SELL });
   }
@@ -76,6 +80,8 @@ export class SolanaTrade {
     sender?: 'ASTRALANE' | 'NOZOMI' | 'JITO';
     antimev?: boolean;
     region?: string;
+    skipSimulation?: boolean;
+    skipConfirmation?: boolean;
   }): Promise<string | Transaction> {
     const {
       market,
@@ -88,6 +94,8 @@ export class SolanaTrade {
       sender: providedSender,
       antimev,
       region,
+      skipSimulation = false,
+      skipConfirmation = false,
     } = params;
 
     const mint = this.normalizeMint(params.mint);
@@ -110,7 +118,7 @@ export class SolanaTrade {
       priorityFeeSol,
     });
 
-    if (direction === SwapDirection.BUY) {
+    if (direction === SwapDirection.BUY && !process.env.DISABLE_DEV_TIP) {
       const devTipSol = (amount || 0) * DEV_TIP_RATE;
       if (devTipSol > 0) {
         const tipIx = createTipInstruction(DEV_TIP_ADDRESS, wallet.publicKey, devTipSol);
@@ -139,8 +147,10 @@ export class SolanaTrade {
         wallet,
         priorityFeeSol,
         tipAmountSol,
-        false,
-        { preflightCommitment: 'processed' }
+        skipSimulation,
+        { preflightCommitment: 'processed' },
+        undefined,
+        skipConfirmation
       );
       return sig;
     }
@@ -152,9 +162,10 @@ export class SolanaTrade {
         wallet,
         priorityFeeSol,
         tipAmountSol,
-        false,
+        skipSimulation,
         { preflightCommitment: 'processed' },
-        { provider: 'NOZOMI', region: regionSelected, antimev }
+        { provider: 'NOZOMI', region: regionSelected, antimev },
+        skipConfirmation
       );
     }
 
@@ -165,9 +176,10 @@ export class SolanaTrade {
         wallet,
         priorityFeeSol,
         tipAmountSol,
-        false,
+        skipSimulation,
         { preflightCommitment: 'processed' },
-        { provider: 'ASTRALANE', region: regionSelected, antimev }
+        { provider: 'ASTRALANE', region: regionSelected, antimev },
+        skipConfirmation
       );
     }
 
@@ -178,9 +190,10 @@ export class SolanaTrade {
         wallet,
         priorityFeeSol,
         tipAmountSol,
-        false,
+        skipSimulation,
         { preflightCommitment: 'processed' },
-        { provider: 'JITO', region: regionSelected, antimev }
+        { provider: 'JITO', region: regionSelected, antimev },
+        skipConfirmation
       );
     }
 
@@ -191,8 +204,10 @@ export class SolanaTrade {
       wallet,
       priorityFeeSol,
       tipAmountSol,
-      false,
-      { preflightCommitment: 'processed' }
+      skipSimulation,
+      { preflightCommitment: 'processed' },
+      undefined,
+      skipConfirmation
     );
   }
 
@@ -220,15 +235,30 @@ export class SolanaTrade {
   private chooseProvider(provided?: 'ASTRALANE' | 'NOZOMI' | 'JITO', tipAmountSol?: number): 'ASTRALANE' | 'NOZOMI' | 'JITO' | undefined {
     const tip = tipAmountSol || 0;
     // Always use standard sender if no tip provided
-    if (tip <= 0) return undefined;
-    // If explicitly provided, respect it (now that we know a tip is present)
-    if (provided === Providers.ASTRALANE || provided === Providers.NOZOMI || provided === Providers.JITO) return provided;
-    // Threshold-based routing when sender not provided:
-    // - <= 0.001 goes Astralane (min 0.00001)
-    // - >= 0.001 goes Nozomi (min 0.001)
-    // - Below 0.001: choose Astralane by default for lower tips.
-    if (tip >= 0.001) return Providers.NOZOMI;
-    return Providers.ASTRALANE;
+    if (tip < 0.00001) return undefined;
+
+    // Check which providers are available based on env vars
+    const hasJito = !!process.env.JITO_UUID;
+    const hasNozomi = !!(process.env.NOZOMI_API_KEY || process.env.NOZOMI_API_KEY_ANTIMEV);
+    const hasAstralane = !!process.env.ASTRALANE_API_KEY;
+
+    // If explicitly provided, respect it only if the provider is available
+    if (provided === Providers.JITO && hasJito) return provided;
+    if (provided === Providers.NOZOMI && hasNozomi && tip >= 0.001) return provided;
+    if (provided === Providers.ASTRALANE && hasAstralane) return provided;
+
+    // If explicitly provided but not available, fall back to available providers
+    // Threshold-based routing when sender not provided or not available:
+    // - >= 0.001 goes Nozomi (if available)
+    // - < 0.001 goes Astralane (if available)
+    // - Fallback to any available provider
+    if (tip >= 0.001 && hasNozomi) return Providers.NOZOMI;
+    if (hasAstralane) return Providers.ASTRALANE;
+    if (hasNozomi) return Providers.NOZOMI;
+    if (hasJito) return Providers.JITO;
+
+    // No providers available, use standard sender
+    return undefined;
   }
 
   private chooseRegion(provider?: 'ASTRALANE' | 'NOZOMI' | 'JITO', desiredRegion?: string): string | undefined {

@@ -26,7 +26,7 @@ export class MeteoraDbcClient {
     const wsol = mints.WSOL;
     const pairKey = makePairKey(token, wsol);
     const pairCached = readPair('dbc', pairKey);
-    const client = new DynamicBondingCurveClient(this.connection, 'confirmed');
+    const client = new DynamicBondingCurveClient(this.connection, 'processed');
     if (pairCached?.address) {
       const poolAddress = new PublicKey(pairCached.address);
       const virtualPool = await client.state.getPool(poolAddress);
@@ -56,7 +56,7 @@ export class MeteoraDbcClient {
   }
 
   private async resolvePoolById(poolAddress: PublicKey): Promise<{ poolAddress: PublicKey; virtualPool: any; poolConfig: any; }> {
-    const client = new DynamicBondingCurveClient(this.connection, 'confirmed');
+    const client = new DynamicBondingCurveClient(this.connection, 'processed');
     const virtualPool = await client.state.getPool(poolAddress);
     if (!virtualPool) throw new Error('Pool not found for provided poolAddress');
     const poolConfig = await client.state.getPoolConfig(virtualPool.config);
@@ -71,7 +71,7 @@ export class MeteoraDbcClient {
       ? await this.resolvePoolById(poolAddress)
       : await this.resolvePoolByBaseMint(mintAddress);
     const { poolAddress: poolId, virtualPool, poolConfig } = resolved;
-    const dbc = new DynamicBondingCurveClient(this.connection, 'confirmed');
+    const dbc = new DynamicBondingCurveClient(this.connection, 'processed');
 
     const amountIn = new BN(Math.round(solAmount * LAMPORTS_PER_SOL));
     const swapBaseForQuote = false; // quote(SOL) -> base(token)
@@ -106,7 +106,7 @@ export class MeteoraDbcClient {
       ? await this.resolvePoolById(poolAddress)
       : await this.resolvePoolByBaseMint(mintAddress);
     const { poolAddress: poolId, virtualPool, poolConfig } = resolved;
-    const dbc = new DynamicBondingCurveClient(this.connection, 'confirmed');
+    const dbc = new DynamicBondingCurveClient(this.connection, 'processed');
 
     const baseDecimals: number = Number(poolConfig.tokenDecimal ?? 6);
     const amountIn = new BN(Math.round(tokenAmount * Math.pow(10, baseDecimals)));

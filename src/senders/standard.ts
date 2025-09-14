@@ -60,7 +60,8 @@ export class StandardClient implements TransactionSenderClient {
     tipAmount: number = 0.001,
     skipSimulation: boolean = false,
     options: SendOptions = {},
-    _extras?: SenderExtras
+    _extras?: SenderExtras,
+    skipConfirmation: boolean = false
   ): Promise<string> {
     try {
       // Get a fresh blockhash immediately before sending
@@ -94,16 +95,20 @@ export class StandardClient implements TransactionSenderClient {
       
       console.log(`Transaction sent via standard RPC: ${signature}`);
       
-      // Monitor for confirmation
-      try {
-        await monitorTransactionConfirmation(signature, this.connection, lastValidBlockHeight);
-        console.log(`Transaction ${signature} confirmed successfully`);
-      } catch (confirmError) {
-        // If the error is a timeout, log it but still return the signature
-        // This allows the caller to handle the transaction as if it were sent
-        // even if we can't confirm it landed on chain within our timeout window
-        console.warn(`Warning: Could not confirm transaction ${signature}: ${confirmError}`);
-        console.warn('Returning signature but transaction confirmation is uncertain');
+      // Monitor for confirmation (unless skipped)
+      if (!skipConfirmation) {
+        try {
+          await monitorTransactionConfirmation(signature, this.connection, lastValidBlockHeight);
+          console.log(`Transaction ${signature} confirmed successfully`);
+        } catch (confirmError) {
+          // If the error is a timeout, log it but still return the signature
+          // This allows the caller to handle the transaction as if it were sent
+          // even if we can't confirm it landed on chain within our timeout window
+          console.warn(`Warning: Could not confirm transaction ${signature}: ${confirmError}`);
+          console.warn('Returning signature but transaction confirmation is uncertain');
+        }
+      } else {
+        console.log(`Transaction ${signature} sent, skipping confirmation monitoring`);
       }
       
       return signature;

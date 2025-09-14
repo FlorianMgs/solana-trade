@@ -25,7 +25,8 @@ export class NozomiSenderClient implements TransactionSenderClient {
     _tipAmount: number = 0,
     skipSimulation: boolean = false,
     _options: any = {},
-    extras?: SenderExtras
+    extras?: SenderExtras,
+    skipConfirmation: boolean = false
   ): Promise<string> {
     try {
       if (!skipSimulation) {
@@ -83,10 +84,14 @@ export class NozomiSenderClient implements TransactionSenderClient {
       }
       const signature: string = json.result;
 
-      try {
-        await monitorTransactionConfirmation(signature, this.connection, lastValidBlockHeight);
-      } catch (e) {
-        console.warn(`Warning: Could not confirm Nozomi tx ${signature}: ${e}`);
+      if (!skipConfirmation) {
+        try {
+          await monitorTransactionConfirmation(signature, this.connection, lastValidBlockHeight);
+        } catch (e) {
+          console.warn(`Warning: Could not confirm Nozomi tx ${signature}: ${e}`);
+        }
+      } else {
+        console.log(`Nozomi transaction ${signature} sent, skipping confirmation monitoring`);
       }
 
       return signature;

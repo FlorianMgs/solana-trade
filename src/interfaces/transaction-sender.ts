@@ -21,7 +21,8 @@ export interface TransactionSenderClient {
     tipAmount: number,
     skipSimulation: boolean,
     options?: SendOptions,
-    extras?: SenderExtras
+    extras?: SenderExtras,
+    skipConfirmation?: boolean
   ): Promise<string>;
 }
 

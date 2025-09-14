@@ -58,7 +58,7 @@ export async function getTokenMetadata(connection: Connection, mintAddress: stri
 
 export async function getDecimalsAndSupplyToken(connection: Connection, mintAddress: string): Promise<{ decimals: number; supply: number } | null> {
   try {
-    const info = await connection.getParsedAccountInfo(new PublicKey(mintAddress), 'confirmed');
+    const info = await connection.getParsedAccountInfo(new PublicKey(mintAddress), 'processed');
     const value: any = info.value;
     const data: any = value?.data;
     const parsed: any = data?.parsed;

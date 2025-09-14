@@ -40,6 +40,11 @@ async function main() {
     const priorityFeeSol = args['priority-fee'] ? parseFloat(args['priority-fee']) : 0.0001;
     const tipAmountSol = args['tip'] ? parseFloat(args['tip']) : 0;
     const poolAddress = args['pool-address'];
+    const sender = args['sender'] as ('ASTRALANE' | 'NOZOMI' | 'JITO' | undefined);
+    const antimev = args['antimev'] !== undefined ? (args['antimev'].toLowerCase?.() === 'true' || args['antimev'] === '1') : undefined;
+    const region = args['region'];
+    const skipSimulation = args['skip-simulation'] !== undefined ? (args['skip-simulation'].toLowerCase?.() === 'true' || args['skip-simulation'] === '1') : false;
+    const skipConfirmation = args['skip-confirmation'] !== undefined ? (args['skip-confirmation'].toLowerCase?.() === 'true' || args['skip-confirmation'] === '1') : false;
 
     const pk58 = args['private-key'];
     const secret = bs58.decode(pk58);
@@ -48,12 +53,12 @@ async function main() {
     const trade = new SolanaTrade(process.env.RPC_URL || undefined);
 
     if (direction === SwapDirection.BUY) {
-      const sig = await trade.buy({ market, wallet, mint, amount, slippage, priorityFeeSol, tipAmountSol, poolAddress });
+      const sig = await trade.buy({ market, wallet, mint, amount, slippage, priorityFeeSol, tipAmountSol, poolAddress, sender, antimev, region, skipSimulation, skipConfirmation });
       console.log(sig);
       return;
     }
     if (direction === SwapDirection.SELL) {
-      const sig = await trade.sell({ market, wallet, mint, amount, slippage, priorityFeeSol, tipAmountSol, poolAddress });
+      const sig = await trade.sell({ market, wallet, mint, amount, slippage, priorityFeeSol, tipAmountSol, poolAddress, sender, antimev, region, skipSimulation, skipConfirmation });
       console.log(sig);
       return;
     }

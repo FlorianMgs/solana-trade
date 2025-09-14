@@ -101,7 +101,7 @@ export class MoonitClient {
     const moonit = new Moonit({
       rpcUrl,
       environment: env,
-      chainOptions: { solana: { confirmOptions: { commitment: 'confirmed' } } },
+      chainOptions: { solana: { confirmOptions: { commitment: 'processed' } } },
     });
     return { moonit };
   }

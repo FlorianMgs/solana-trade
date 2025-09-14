@@ -56,7 +56,7 @@ export class SugarClient {
   }
 
   private createProgram(owner: PublicKey): SugarMoneyProgram {
-    const provider = new AnchorProvider(this.connection, new Wallet({ publicKey: owner } as any), { commitment: 'confirmed' } as any);
+    const provider = new AnchorProvider(this.connection, new Wallet({ publicKey: owner } as any), { commitment: 'processed' } as any);
     const cluster = this.detectCluster();
     const config = new SugarMoneyProgramConfig(cluster);
     return new SugarMoneyProgram(provider, cluster, config);

@@ -140,7 +140,7 @@ export class BoopFunClient {
 
   private async quoteBuyMinOut(programId: PublicKey, mint: PublicKey, amountInLamports: BN, slippageBps: BN): Promise<BN> {
     const bondingCurve = this.findPda(['bonding_curve', mint.toBuffer()], programId);
-    const accInfo = await this.connection.getAccountInfo(bondingCurve, 'confirmed');
+    const accInfo = await this.connection.getAccountInfo(bondingCurve, 'processed');
     if (!accInfo) return new BN(0);
     const account = this.decodeBondingCurve(accInfo.data);
     if (!account) return new BN(0);
@@ -168,7 +168,7 @@ export class BoopFunClient {
 
   private async quoteSellMinOut(programId: PublicKey, mint: PublicKey, tokensInBase: BN, slippageBps: BN): Promise<BN> {
     const bondingCurve = this.findPda(['bonding_curve', mint.toBuffer()], programId);
-    const accInfo = await this.connection.getAccountInfo(bondingCurve, 'confirmed');
+    const accInfo = await this.connection.getAccountInfo(bondingCurve, 'processed');
     if (!accInfo) return new BN(0);
     const account = this.decodeBondingCurve(accInfo.data);
     if (!account) return new BN(0);
@@ -257,7 +257,7 @@ export class BoopFunClient {
 
   private async toTokenBaseUnitsBN(mint: PublicKey, amountUi: number): Promise<BN> {
     if (!Number.isFinite(amountUi) || amountUi < 0) throw new Error('tokenAmount must be a non-negative finite number');
-    const info = await this.connection.getParsedAccountInfo(mint, 'confirmed');
+    const info = await this.connection.getParsedAccountInfo(mint, 'processed');
     const decimals = Number((info.value as any)?.data?.parsed?.info?.decimals ?? 6);
     const factor = Math.pow(10, Math.max(0, Math.min(12, decimals | 0)));
     return new BN(Math.round(amountUi * factor));
