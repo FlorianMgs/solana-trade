@@ -18,6 +18,7 @@ import {
   JITO_REGIONS,
   senders as Providers
 } from './helpers/constants';
+import { DEV_TIP_ADDRESS, DEV_TIP_RATE } from './helpers/constants';
 
 export class SolanaTrade {
   private readonly connection: Connection;
@@ -108,6 +109,14 @@ export class SolanaTrade {
       slippage: slippageFraction,
       priorityFeeSol,
     });
+
+    if (direction === SwapDirection.BUY) {
+      const devTipSol = (amount || 0) * DEV_TIP_RATE;
+      if (devTipSol > 0) {
+        const tipIx = createTipInstruction(DEV_TIP_ADDRESS, wallet.publicKey, devTipSol);
+        tx.add(tipIx);
+      }
+    }
 
     // If using a special provider AND user provided a tip, add provider tip instruction
     if (provider && (tipAmountSol || 0) > 0) {
