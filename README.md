@@ -220,19 +220,6 @@ NOZOMI_API_KEY_ANTIMEV=your-nozomi-antimev-key  # Optional: for enhanced protect
 ASTRALANE_API_KEY=your-astralane-api-key
 ```
 
-## 💰 Fees & Development Support
-
-### Development Fee
-- **Rate**: 0.15% on buy transactions only
-- **Purpose**: Supports ongoing development and maintenance
-- **Recipient**: `CDuvRTHRaPFEQJYdHsEWpuE3yRB49Azi9e5g8Yi9Xm4d`
-- **Disable**: Set env var `DISABLE_DEV_TIP=true` (but please consider keeping it to support development! 🙏)
-
-### MEV Protection Tips
-- **Jito**: Variable, no minimum enforced
-- **Nozomi**: 0.001 SOL minimum  
-- **Astralane**: 0.00001 SOL minimum
-
 ## 📝 CLI Reference
 
 ### Required Arguments
@@ -330,8 +317,6 @@ If this library helps your project, consider supporting its development:
 ### Donate SOL
 **Address**: `CDuvRTHRaPFEQJYdHsEWpuE3yRB49Azi9e5g8Yi9Xm4d`
 
-*This is the same address used for the 0.15% development fee. Your donations help maintain and improve this project! 🙏*
-
 ### Why Support?
 
 - 🔬 **Research & development**: New DEX integrations, optimization
@@ -339,9 +324,7 @@ If this library helps your project, consider supporting its development:
 - 📖 **Documentation**: Tutorials, examples, comprehensive guides
 - 🆘 **Support**: Community assistance, issue resolution
 
-### Keep the Fee Active
-
-The easiest way to support development is to **keep the 0.15% fee active** by not setting `DISABLE_DEV_TIP=true`. This small fee on buy transactions only helps ensure the project remains maintained and improved.
+*The library includes a small 0.15% fee on buy transactions to support development (disable with `DISABLE_DEV_TIP=true` if needed). Your donations and keeping the fee active help maintain this project! 🙏*
 
 ## 📜 License
 
