@@ -1,6 +1,6 @@
 {
   "name": "solana-trade",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "A comprehensive Solana trading library supporting multiple DEXs and MEV protection services",
   "keywords": [
     "solana",

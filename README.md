@@ -190,12 +190,36 @@ interface BuyParams {
   region?: string;                   // Preferred region for MEV service
   skipSimulation?: boolean;          // Skip transaction simulation (default: false)
   skipConfirmation?: boolean;        // Skip confirmation waiting (default: false)
+  additionalInstructions?: TransactionInstruction[]; // Appends right after market instructions
 }
 ```
 
 ##### `sell(params: SellParams): Promise<string | Transaction>`
 
 Execute a sell transaction. Same parameters as `buy()`, except `amount` represents token quantity.
+
+#### Adding additional instructions
+
+You can provide custom Solana `TransactionInstruction` items via `additionalInstructions`. They will be appended immediately after the market swap instructions and before any provider tip instructions:
+
+```typescript
+import { SystemProgram } from '@solana/web3.js';
+
+await trader.buy({
+  market: 'PUMP_FUN',
+  wallet,
+  mint: 'So11111111111111111111111111111111111111112',
+  amount: 0.1,
+  slippage: 5,
+  additionalInstructions: [
+    SystemProgram.transfer({
+      fromPubkey: wallet.publicKey,
+      toPubkey: wallet.publicKey, // example noop self-transfer
+      lamports: 1,
+    }),
+  ],
+});
+```
 
 ## 🌍 Environment Variables
 

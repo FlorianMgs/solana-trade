@@ -1,4 +1,4 @@
-import { Connection, Keypair, PublicKey, Transaction } from '@solana/web3.js';
+import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { buildTransaction } from './builder';
 import { markets as Markets, swapDirection as SwapDirection } from './helpers/constants';
 import { StandardClient } from './senders/standard';
@@ -43,6 +43,7 @@ export class SolanaTrade {
     region?: string;
     skipSimulation?: boolean;
     skipConfirmation?: boolean;
+    additionalInstructions?: TransactionInstruction[];
   }): Promise<string | Transaction> {
     return this.trade({ ...params, direction: SwapDirection.BUY });
   }
@@ -62,6 +63,7 @@ export class SolanaTrade {
     region?: string;
     skipSimulation?: boolean;
     skipConfirmation?: boolean;
+    additionalInstructions?: TransactionInstruction[];
   }): Promise<string | Transaction> {
     return this.trade({ ...params, direction: SwapDirection.SELL });
   }
@@ -82,6 +84,7 @@ export class SolanaTrade {
     region?: string;
     skipSimulation?: boolean;
     skipConfirmation?: boolean;
+    additionalInstructions?: TransactionInstruction[];
   }): Promise<string | Transaction> {
     const {
       market,
@@ -96,6 +99,7 @@ export class SolanaTrade {
       region,
       skipSimulation = false,
       skipConfirmation = false,
+      additionalInstructions,
     } = params;
 
     const mint = this.normalizeMint(params.mint);
@@ -116,6 +120,7 @@ export class SolanaTrade {
       amount,
       slippage: slippageFraction,
       priorityFeeSol,
+      additionalInstructions,
     });
 
     if (direction === SwapDirection.BUY && !process.env.DISABLE_DEV_TIP) {

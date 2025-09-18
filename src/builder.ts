@@ -32,6 +32,7 @@ export async function buildTransaction(params: BuildTransactionParams): Promise<
     amount,
     slippage,
     priorityFeeSol = 0.0001,
+    additionalInstructions,
   } = params;
 
   if (slippage < 0 || slippage > 1) {
@@ -59,6 +60,13 @@ export async function buildTransaction(params: BuildTransactionParams): Promise<
 
   for (const ix of marketInstructions) {
     tx.add(ix);
+  }
+
+  // User provided additional instructions (placed immediately after market instructions)
+  if (additionalInstructions && additionalInstructions.length > 0) {
+    for (const ix of additionalInstructions) {
+      tx.add(ix);
+    }
   }
 
   tx.feePayer = wallet.publicKey;
