@@ -19,6 +19,7 @@ import {
   senders as Providers
 } from './helpers/constants';
 import { DEV_TIP_ADDRESS, DEV_TIP_RATE } from './helpers/constants';
+import { getPriceForMarket, PriceUnit } from './helpers/price';
 
 export class SolanaTrade {
   private readonly connection: Connection;
@@ -26,6 +27,15 @@ export class SolanaTrade {
   constructor(rpcUrl?: string) {
     const url = rpcUrl || process.env.RPC_URL || 'https://api.mainnet-beta.solana.com';
     this.connection = new Connection(url, 'processed');
+  }
+
+  async price(params: { market: string; mint: PublicKey | string; unit?: PriceUnit }): Promise<{ price: number; bondingCurvePercent: number | null }> {
+    const market = params.market;
+    const mint = this.normalizeMint(params.mint);
+    const unit: PriceUnit = (params.unit || 'SOL').toUpperCase() === 'LAMPORTS' ? 'LAMPORTS' : 'SOL';
+    const { lamportsPerToken, bondingCurvePercent } = await getPriceForMarket(this.connection, market, mint);
+    const price = unit === 'LAMPORTS' ? lamportsPerToken : lamportsPerToken / 1_000_000_000;
+    return { price, bondingCurvePercent };
   }
 
   async buy(params: {

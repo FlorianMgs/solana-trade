@@ -2,7 +2,7 @@ import { Connection, PublicKey, TransactionInstruction, LAMPORTS_PER_SOL, Comput
 import BN from 'bn.js';
 import { DynamicBondingCurveClient, getCurrentPoint } from '@meteora-ag/dynamic-bonding-curve-sdk';
 import { mints } from '../../helpers/constants';
-import { makePairKey, readPair, writePair } from '../../helpers/disk-cache';
+import { resolveDbcPoolByBaseMint, resolveDbcPoolById } from './pool-utils';
 
 export class MeteoraDbcClient {
   private readonly connection: Connection;
@@ -21,55 +21,13 @@ export class MeteoraDbcClient {
     return bps;
   }
 
-  private async resolvePoolByBaseMint(baseMint: PublicKey): Promise<{ poolAddress: PublicKey; virtualPool: any; poolConfig: any; }> {
-    const token = baseMint.toBase58();
-    const wsol = mints.WSOL;
-    const pairKey = makePairKey(token, wsol);
-    const pairCached = readPair('dbc', pairKey);
-    const client = new DynamicBondingCurveClient(this.connection, 'processed');
-    if (pairCached?.address) {
-      const poolAddress = new PublicKey(pairCached.address);
-      const virtualPool = await client.state.getPool(poolAddress);
-      if (!virtualPool) throw new Error('DBC virtual pool state not found');
-      const poolConfig = await client.state.getPoolConfig(virtualPool.config);
-      const quoteMintFromConfig = (poolConfig as any)?.quoteMint?.toBase58?.() ?? String((poolConfig as any)?.quoteMint);
-      if (quoteMintFromConfig !== mints.WSOL) throw new Error('DBC pool quote mint is not WSOL (SOL)');
-      return { poolAddress, virtualPool, poolConfig };
-    }
-
-    const programAccount = await client.state.getPoolByBaseMint(baseMint);
-    if (!programAccount) throw new Error('DBC pool for base mint not found');
-
-    const poolAddress = (programAccount as any).publicKey as PublicKey;
-    const virtualPool = (programAccount as any).account ?? await client.state.getPool(poolAddress);
-    if (!virtualPool) throw new Error('DBC virtual pool state not found');
-
-    const poolConfig = await client.state.getPoolConfig(virtualPool.config);
-
-    const quoteMintFromConfig = (poolConfig as any)?.quoteMint?.toBase58?.() ?? String((poolConfig as any)?.quoteMint);
-    if (quoteMintFromConfig !== mints.WSOL) {
-      throw new Error('DBC pool quote mint is not WSOL (SOL)');
-    }
-
-    writePair('dbc', pairKey, poolAddress.toBase58());
-    return { poolAddress, virtualPool, poolConfig };
-  }
-
-  private async resolvePoolById(poolAddress: PublicKey): Promise<{ poolAddress: PublicKey; virtualPool: any; poolConfig: any; }> {
-    const client = new DynamicBondingCurveClient(this.connection, 'processed');
-    const virtualPool = await client.state.getPool(poolAddress);
-    if (!virtualPool) throw new Error('Pool not found for provided poolAddress');
-    const poolConfig = await client.state.getPoolConfig(virtualPool.config);
-    const quoteMintFromConfig = (poolConfig as any)?.quoteMint?.toBase58?.() ?? String((poolConfig as any)?.quoteMint);
-    if (quoteMintFromConfig !== mints.WSOL) throw new Error('Incompatible poolAddress for Meteora DBC: expected WSOL quote');
-    return { poolAddress, virtualPool, poolConfig };
-  }
+  // pool discovery moved to pool-utils
 
   async getBuyInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; solAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
     const { mintAddress, wallet, solAmount, slippage, poolAddress } = params;
     const resolved = poolAddress
-      ? await this.resolvePoolById(poolAddress)
-      : await this.resolvePoolByBaseMint(mintAddress);
+      ? await resolveDbcPoolById(this.connection, poolAddress)
+      : await resolveDbcPoolByBaseMint(this.connection, mintAddress);
     const { poolAddress: poolId, virtualPool, poolConfig } = resolved;
     const dbc = new DynamicBondingCurveClient(this.connection, 'processed');
 
@@ -103,8 +61,8 @@ export class MeteoraDbcClient {
   async getSellInstructions(params: { mintAddress: PublicKey; wallet: PublicKey; tokenAmount: number; slippage: number; poolAddress?: PublicKey; }): Promise<TransactionInstruction[]> {
     const { mintAddress, wallet, tokenAmount, slippage, poolAddress } = params;
     const resolved = poolAddress
-      ? await this.resolvePoolById(poolAddress)
-      : await this.resolvePoolByBaseMint(mintAddress);
+      ? await resolveDbcPoolById(this.connection, poolAddress)
+      : await resolveDbcPoolByBaseMint(this.connection, mintAddress);
     const { poolAddress: poolId, virtualPool, poolConfig } = resolved;
     const dbc = new DynamicBondingCurveClient(this.connection, 'processed');
 

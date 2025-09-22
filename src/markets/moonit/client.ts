@@ -97,20 +97,12 @@ export class MoonitClient {
 
   private createMoonit(): { moonit: Moonit } {
     const rpcUrl: string = (this.connection as any)._rpcEndpoint || '';
-    const env = this.detectEnvironment(rpcUrl);
     const moonit = new Moonit({
       rpcUrl,
-      environment: env,
+      environment: Environment.MAINNET,
       chainOptions: { solana: { confirmOptions: { commitment: 'processed' } } },
     });
     return { moonit };
   }
 
-  private detectEnvironment(rpcUrl: string): Environment {
-    const url = (rpcUrl || '').toLowerCase();
-    if (url.includes('devnet') || url.includes('localhost') || url.includes('127.0.0.1')) {
-      return Environment.DEVNET;
-    }
-    return Environment.MAINNET;
-  }
 }

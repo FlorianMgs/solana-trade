@@ -25,6 +25,19 @@ function parseArgs(argv: string[]) {
 async function main() {
   try {
     const args = parseArgs(process.argv);
+    // Price mode: --price or --action price
+    if (args['price'] === 'true' || args['action']?.toLowerCase?.() === 'price') {
+      const market = args['market'];
+      const mint = args['mint'];
+      if (!market || !mint) {
+        throw new Error('Missing required args for price: --market and --mint');
+      }
+      const unit = args['unit'] as ('SOL' | 'LAMPORTS' | undefined);
+      const trade = new SolanaTrade(process.env.RPC_URL || undefined);
+      const { price, bondingCurvePercent } = await trade.price({ market, mint, unit });
+      console.log(JSON.stringify({ price, bondingCurvePercent }));
+      return;
+    }
     const required = ['market', 'direction', 'mint', 'amount', 'slippage', 'private-key'];
     for (const r of required) {
       if (!(r in args)) {

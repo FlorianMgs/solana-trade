@@ -20,6 +20,7 @@ A comprehensive, production-ready Solana trading library supporting 15+ DEXs wit
 - 📦 **TypeScript**: Complete type definitions
 - 🔧 **Configurable**: Extensive customization options for advanced users
 - 📊 **Transaction Control**: Priority fees, slippage protection, simulation control
+- 📈 **Price & Curve Insight**: Get price in SOL/lamports for any mint, plus bonding curve completion percent for launchpads
 - 🌐 **Multi-Region**: Global MEV protection endpoints for optimal performance
 
 ## 📋 Supported Markets & Protocols
@@ -110,6 +111,15 @@ const sellSignature = await trader.sell({
 
 console.log('Sell transaction:', sellSignature);
 
+// Query spot price (SOL or lamports) & bonding curve percent
+const { price, bondingCurvePercent } = await trader.price({
+  market: 'RAYDIUM_CPMM',
+  mint: 'TokenMintAddress',
+  unit: 'SOL' // or 'LAMPORTS'
+});
+
+console.log('Price (SOL):', price, 'Curve %:', bondingCurvePercent);
+
 // Get transaction object without sending (Legacy Transaction)
 const transaction = await trader.buy({
   market: 'PUMP_FUN',
@@ -141,6 +151,13 @@ solana-trade \
   --sender JITO \
   --tip 0.001 \
   --region NY
+
+# Get spot price via CLI (outputs JSON { price, bondingCurvePercent })
+solana-trade \
+  --price \
+  --market RAYDIUM_CPMM \
+  --mint TokenMintAddress \
+  --unit SOL
 
 # Sell tokens with custom priority fee
 solana-trade \

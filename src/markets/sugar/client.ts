@@ -57,19 +57,11 @@ export class SugarClient {
 
   private createProgram(owner: PublicKey): SugarMoneyProgram {
     const provider = new AnchorProvider(this.connection, new Wallet({ publicKey: owner } as any), { commitment: 'processed' } as any);
-    const cluster = this.detectCluster();
+    const cluster = 'production';
     const config = new SugarMoneyProgramConfig(cluster);
     return new SugarMoneyProgram(provider, cluster, config);
   }
 
-  private detectCluster(): 'localnet' | 'devnet' | 'production' | 'mainnet-test' {
-    const url = ((this.connection as any)._rpcEndpoint || '').toLowerCase();
-    if (url.includes('localhost') || url.includes('127.0.0.1')) return 'localnet';
-    if (url.includes('devnet')) return 'devnet';
-    // prefer production for mainnet endpoints
-    if (url.includes('mainnet') || url.includes('helius') || url.includes('quicknode') || url.includes('rpc') || url.includes('projectserum')) return 'production';
-    return 'production';
-  }
 
   private toBpsFromFraction(slippage: number): number {
     let bps = Math.round(slippage * 10000);
