@@ -2,6 +2,7 @@ import { Connection, PublicKey, TransactionInstruction, LAMPORTS_PER_SOL } from 
 import BN from 'bn.js';
 import {
   PumpSdk,
+  OnlinePumpSdk,
   getBuyTokenAmountFromSolAmount,
   getSellSolAmountFromTokenAmount,
 } from '@pump-fun/pump-sdk';
@@ -14,10 +15,12 @@ import { BuyParams, SellParams } from '../../interfaces/markets';
 export class PumpFunClient {
   private readonly connection: Connection;
   private readonly sdk: PumpSdk;
+  private readonly onlineSdk: OnlinePumpSdk;
 
   constructor(connection: Connection) {
     this.connection = connection;
-    this.sdk = new PumpSdk(connection);
+    this.sdk = new PumpSdk();
+    this.onlineSdk = new OnlinePumpSdk(connection);
   }
 
   /**
@@ -27,8 +30,8 @@ export class PumpFunClient {
     const { mintAddress, wallet, solAmount, slippage } = params;
 
     const sdkSlippagePercent = this.normalizeSlippagePercent(slippage);
-    const global = await this.sdk.fetchGlobal();
-    const { bondingCurveAccountInfo, bondingCurve, associatedUserAccountInfo } = await this.sdk.fetchBuyState(mintAddress, wallet);
+    const global = await this.onlineSdk.fetchGlobal();
+    const { bondingCurveAccountInfo, bondingCurve, associatedUserAccountInfo } = await this.onlineSdk.fetchBuyState(mintAddress, wallet);
 
     const solAmountLamports = this.toLamportsBN(solAmount);
 
@@ -60,8 +63,8 @@ export class PumpFunClient {
     const { mintAddress, wallet, tokenAmount, slippage } = params;
 
     const sdkSlippagePercent = this.normalizeSlippagePercent(slippage);
-    const global = await this.sdk.fetchGlobal();
-    const { bondingCurveAccountInfo, bondingCurve } = await this.sdk.fetchSellState(mintAddress, wallet);
+    const global = await this.onlineSdk.fetchGlobal();
+    const { bondingCurveAccountInfo, bondingCurve } = await this.onlineSdk.fetchSellState(mintAddress, wallet);
 
     const tokenAmountBaseUnits = this.toTokenBaseUnitsBN(tokenAmount);
 
@@ -87,13 +90,37 @@ export class PumpFunClient {
 
   private toLamportsBN(sol: number): BN {
     if (!Number.isFinite(sol) || sol < 0) throw new Error('solAmount must be a non-negative finite number');
-    return new BN(Math.round(sol * LAMPORTS_PER_SOL));
+    
+    const lamports = sol * LAMPORTS_PER_SOL;
+    if (!Number.isFinite(lamports)) {
+      throw new Error(`Invalid lamports calculation: sol=${sol}, lamports=${lamports}`);
+    }
+    
+    const roundedLamports = Math.round(lamports);
+    if (!Number.isFinite(roundedLamports) || roundedLamports > Number.MAX_SAFE_INTEGER) {
+      throw new Error(`Lamports value too large or invalid: ${roundedLamports}`);
+    }
+    
+    return new BN(roundedLamports);
   }
 
   // PumpFun tokens use 6 decimals
   private toTokenBaseUnitsBN(tokens: number): BN {
     if (!Number.isFinite(tokens) || tokens < 0) throw new Error('tokenAmount must be a non-negative finite number');
-    return new BN(Math.round(tokens * 1_000_000));
+    
+    const baseUnits = tokens * 1_000_000;
+    
+    if (!Number.isFinite(baseUnits)) {
+      throw new Error(`Invalid token base units calculation: tokens=${tokens}, baseUnits=${baseUnits}`);
+    }
+    
+    const roundedBaseUnits = Math.round(baseUnits);
+    
+    if (!Number.isFinite(roundedBaseUnits) || roundedBaseUnits > Number.MAX_SAFE_INTEGER) {
+      throw new Error(`Token base units value too large or invalid: ${roundedBaseUnits}`);
+    }
+    
+    return new BN(roundedBaseUnits);
   }
 
   // SDK expects slippage in percent units (1 => 1%)
