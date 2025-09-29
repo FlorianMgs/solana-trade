@@ -1,6 +1,6 @@
 import { Connection, PublicKey, TransactionInstruction, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import BN from 'bn.js';
-import { PumpAmmSdk, canonicalPumpPoolPda } from '@pump-fun/pump-swap-sdk';
+import { PumpAmmSdk, OnlinePumpAmmSdk, canonicalPumpPoolPda } from '@pump-fun/pump-swap-sdk';
 
 import { BuyParams, SellParams } from '../../interfaces/markets'; 
 
@@ -10,10 +10,12 @@ import { BuyParams, SellParams } from '../../interfaces/markets';
 export class PumpSwapClient {
   private readonly connection: Connection;
   private readonly sdk: PumpAmmSdk;
+  private readonly onlineSdk: OnlinePumpAmmSdk;
 
   constructor(connection: Connection) {
     this.connection = connection;
-    this.sdk = new PumpAmmSdk(this.connection);
+    this.sdk = new PumpAmmSdk();
+    this.onlineSdk = new OnlinePumpAmmSdk(this.connection);
   }
 
   async getBuyInstructions(params: BuyParams): Promise<TransactionInstruction[]> {
@@ -21,7 +23,7 @@ export class PumpSwapClient {
 
     const sdkSlippagePercent = this.normalizeSlippagePercent(slippage);
     const poolKey = poolAddress ?? this.getCanonicalPoolKey(mintAddress);
-    const swapState = await this.sdk.swapSolanaState(poolKey, wallet);
+    const swapState = await this.onlineSdk.swapSolanaState(poolKey, wallet);
 
     const quoteLamports = this.toLamportsBN(solAmount);
 
@@ -30,10 +32,9 @@ export class PumpSwapClient {
 
   async getSellInstructions(params: SellParams): Promise<TransactionInstruction[]> {
     const { mintAddress, wallet, tokenAmount, slippage, poolAddress } = params;
-
     const sdkSlippagePercent = this.normalizeSlippagePercent(slippage);
     const poolKey = poolAddress ?? this.getCanonicalPoolKey(mintAddress);
-    const swapState = await this.sdk.swapSolanaState(poolKey, wallet);
+    const swapState = await this.onlineSdk.swapSolanaState(poolKey, wallet);
 
     const decimals = swapState.baseMintAccount.decimals;
     const baseAmount = this.toBaseUnitsBN(tokenAmount, decimals);
@@ -42,7 +43,7 @@ export class PumpSwapClient {
   }
 
   private getCanonicalPoolKey(mint: PublicKey): PublicKey {
-    const [poolKey] = canonicalPumpPoolPda(mint);
+    const poolKey = canonicalPumpPoolPda(mint);
     return poolKey;
   }
 
