@@ -3,11 +3,11 @@ import { roundLamports, roundPercent } from '../../helpers/price';
 import { MarketPriceResult } from '../../interfaces/price';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { PumpSdk } = require('@pump-fun/pump-sdk');
+const { OnlinePumpSdk } = require('@pump-fun/pump-sdk');
 
 export async function getPumpFunPrice(connection: Connection, mint: PublicKey): Promise<MarketPriceResult> {
-	const sdk = new PumpSdk(connection);
-	const bondingCurve = await sdk.fetchBondingCurve(mint);
+	const onlineSdk = new OnlinePumpSdk(connection);
+	const bondingCurve = await onlineSdk.fetchBondingCurve(mint);
 
 	// Price from virtual reserves (instantaneous price)
 	const vSolLamports = Number(bondingCurve.virtualSolReserves.toString());
