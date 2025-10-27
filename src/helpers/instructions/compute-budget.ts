@@ -18,7 +18,9 @@ export const createComputeBudgetInstructions = (priorityFeeSol: number): Transac
 
   const feeLamports = priorityFeeSol * LAMPORTS_PER_SOL;
   const unitPriceLamports = feeLamports / BASE_COMPUTE_UNITS;
-  const computeUnitPrice = unitPriceLamports * LAMPORTS_TO_MICROLAMPORTS;
+  // Round to the nearest integer to avoid passing fractional microLamports,
+  // which would cause BigInt conversion errors inside web3.js
+  const computeUnitPrice = Math.round(unitPriceLamports * LAMPORTS_TO_MICROLAMPORTS);
   
   const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({ 
     microLamports: computeUnitPrice

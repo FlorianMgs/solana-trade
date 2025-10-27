@@ -18,6 +18,6 @@ export const createTipInstruction = (
   return SystemProgram.transfer({
     fromPubkey: payer,
     toPubkey: tipAddress,
-    lamports: tipAmountSol * LAMPORTS_PER_SOL,
+    lamports: Math.round(tipAmountSol * LAMPORTS_PER_SOL),
   });
 }
