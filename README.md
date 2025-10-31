@@ -261,6 +261,15 @@ NOZOMI_API_KEY_ANTIMEV=your-nozomi-antimev-key  # Optional: for enhanced protect
 ASTRALANE_API_KEY=your-astralane-api-key
 ```
 
+### PumpSwap
+
+```bash
+# Milliseconds to wait for PumpSwap pool readiness before decoding
+# Prevents early "invalid account discriminator" during snipes/migrations
+# Default: 5000
+PUMPSWAP_POOL_READY_TIMEOUT_MS=5000
+```
+
 ## 📝 CLI Reference
 
 ### Required Arguments

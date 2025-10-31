@@ -1,6 +1,6 @@
 import { Connection, PublicKey, TransactionInstruction, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import BN from 'bn.js';
-import { PumpAmmSdk, OnlinePumpAmmSdk, canonicalPumpPoolPda } from '@pump-fun/pump-swap-sdk';
+import { PumpAmmSdk, OnlinePumpAmmSdk, canonicalPumpPoolPda, PUMP_AMM_PROGRAM_ID } from '@pump-fun/pump-swap-sdk';
 
 import { BuyParams, SellParams } from '../../interfaces/markets'; 
 
@@ -23,23 +23,45 @@ export class PumpSwapClient {
 
     const sdkSlippagePercent = this.normalizeSlippagePercent(slippage);
     const poolKey = poolAddress ?? this.getCanonicalPoolKey(mintAddress);
+
+    // Guard: wait until pool decodes to avoid early "invalid account discriminator" errors
+    await this.waitForPoolInitialized(poolKey, this.getPoolReadyTimeoutMs());
+
     const swapState = await this.onlineSdk.swapSolanaState(poolKey, wallet);
 
     const quoteLamports = this.toLamportsBN(solAmount);
 
-    return await this.sdk.buyQuoteInput(swapState, quoteLamports, sdkSlippagePercent);
+    const instructions = await this.sdk.buyQuoteInput(
+      swapState,
+      quoteLamports,
+      sdkSlippagePercent,
+    );
+
+    // 04/11/2025 Forward-compat: enforce pool account writable per PumpSwap program upgrade
+    return this.ensurePoolWritable(instructions, poolKey);
   }
 
   async getSellInstructions(params: SellParams): Promise<TransactionInstruction[]> {
     const { mintAddress, wallet, tokenAmount, slippage, poolAddress } = params;
     const sdkSlippagePercent = this.normalizeSlippagePercent(slippage);
     const poolKey = poolAddress ?? this.getCanonicalPoolKey(mintAddress);
+
+    // Guard: wait until pool decodes to avoid early "invalid account discriminator" errors
+    await this.waitForPoolInitialized(poolKey, this.getPoolReadyTimeoutMs());
+
     const swapState = await this.onlineSdk.swapSolanaState(poolKey, wallet);
 
     const decimals = swapState.baseMintAccount.decimals;
     const baseAmount = this.toBaseUnitsBN(tokenAmount, decimals);
 
-    return await this.sdk.sellBaseInput(swapState, baseAmount, sdkSlippagePercent);
+    const instructions = await this.sdk.sellBaseInput(
+      swapState,
+      baseAmount,
+      sdkSlippagePercent,
+    );
+
+    // Forward-compat: enforce pool account writable per PumpSwap program upgrade
+    return this.ensurePoolWritable(instructions, poolKey);
   }
 
   private getCanonicalPoolKey(mint: PublicKey): PublicKey {
@@ -64,6 +86,44 @@ export class PumpSwapClient {
     }
     const percent = Math.round(fraction * 100);
     return Math.max(0, Math.min(100, percent));
+  }
+
+  // Polls until pool is owned by Pump AMM and decodes successfully; prevents invalid discriminator
+  private async waitForPoolInitialized(poolKey: PublicKey, timeoutMs: number = 5000, intervalMs: number = 75): Promise<void> {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < timeoutMs) {
+      const accountInfo = await this.connection.getAccountInfo(poolKey);
+      if (accountInfo && accountInfo.owner.equals(PUMP_AMM_PROGRAM_ID) && accountInfo.data.length > 8) {
+        try {
+          // Validate by attempting a decode; if it throws, pool is not ready yet
+          this.sdk.decodePool(accountInfo as any);
+          return;
+        } catch {
+          // continue polling
+        }
+      }
+      await new Promise(r => setTimeout(r, intervalMs));
+    }
+    throw new Error('PumpSwap pool not initialized or mismatched owner');
+  }
+
+  // Mutates instruction metas to set the pool account writable (index defined by IDL)
+  private ensurePoolWritable(instructions: TransactionInstruction[], poolKey: PublicKey): TransactionInstruction[] {
+    for (const ix of instructions) {
+      for (const meta of ix.keys) {
+        if (meta.pubkey.equals(poolKey)) {
+          meta.isWritable = true;
+        }
+      }
+    }
+    return instructions;
+  }
+
+  // Allow customizing wait timeout via env var PUMPSWAP_POOL_READY_TIMEOUT_MS (ms)
+  private getPoolReadyTimeoutMs(): number {
+    const raw = process.env.PUMPSWAP_POOL_READY_TIMEOUT_MS;
+    const n = raw ? Number(raw) : NaN;
+    return Number.isFinite(n) && n >= 0 ? n : 5000;
   }
 }
 
