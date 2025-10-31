@@ -24,8 +24,10 @@ export class PumpSwapClient {
     const sdkSlippagePercent = this.normalizeSlippagePercent(slippage);
     const poolKey = poolAddress ?? this.getCanonicalPoolKey(mintAddress);
 
-    // Guard: wait until pool decodes to avoid early "invalid account discriminator" errors
-    await this.waitForPoolInitialized(poolKey, this.getPoolReadyTimeoutMs());
+    // Guard: wait until pool decodes to avoid early "invalid account discriminator" errors, if client doesnt pass pool address
+    if (!poolAddress) {
+      await this.waitForPoolInitialized(poolKey, this.getPoolReadyTimeoutMs());
+    }
 
     const swapState = await this.onlineSdk.swapSolanaState(poolKey, wallet);
 
@@ -46,8 +48,10 @@ export class PumpSwapClient {
     const sdkSlippagePercent = this.normalizeSlippagePercent(slippage);
     const poolKey = poolAddress ?? this.getCanonicalPoolKey(mintAddress);
 
-    // Guard: wait until pool decodes to avoid early "invalid account discriminator" errors
-    await this.waitForPoolInitialized(poolKey, this.getPoolReadyTimeoutMs());
+    // Guard: wait until pool decodes to avoid early "invalid account discriminator" errors, if client doesnt pass pool address
+    if (!poolAddress) {
+      await this.waitForPoolInitialized(poolKey, this.getPoolReadyTimeoutMs());
+    }
 
     const swapState = await this.onlineSdk.swapSolanaState(poolKey, wallet);
 
