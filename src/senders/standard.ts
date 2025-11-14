@@ -64,7 +64,16 @@ export class StandardClient implements TransactionSenderClient {
     skipConfirmation: boolean = false
   ): Promise<string> {
     try {
-      // Get a fresh blockhash immediately before sending
+      // Prepare transaction: fresh blockhash, fee payer, and signature
+      const { blockhash, lastValidBlockHeight } = await this.connection.getLatestBlockhash('processed');
+      transaction.recentBlockhash = blockhash;
+      if (!transaction.feePayer) {
+        transaction.feePayer = payer.publicKey;
+      }
+      transaction.sign(payer);
+      console.log(`Using fresh blockhash: ${blockhash}, valid until height: ${lastValidBlockHeight}`);
+
+      // Optionally simulate the fully prepared transaction before sending
       if (!skipSimulation) {
         const simulationResult = await this.simulateTransaction(transaction);
         
@@ -75,23 +84,14 @@ export class StandardClient implements TransactionSenderClient {
         }
         console.log('Transaction simulation successful. Proceeding with sending...');
       }
-      
-      const { blockhash, lastValidBlockHeight } = await this.connection.getLatestBlockhash('processed');
-      transaction.recentBlockhash = blockhash;
-      console.log(`Using fresh blockhash: ${blockhash}, valid until height: ${lastValidBlockHeight}`);
 
-      transaction.sign(payer);
-
-      // Send the transaction
-      const signature = await this.connection.sendTransaction(
-        transaction,
-        [payer],
-        {
-          skipPreflight: options.skipPreflight,
-          preflightCommitment: options.preflightCommitment || 'processed',
-          maxRetries: options.maxRetries,
-        }
-      );
+      // Send the already-signed transaction via raw RPC so we don't mutate it post-simulation
+      const raw = transaction.serialize();
+      const signature = await this.connection.sendRawTransaction(raw, {
+        skipPreflight: options.skipPreflight,
+        preflightCommitment: options.preflightCommitment || 'processed',
+        maxRetries: options.maxRetries,
+      });
       
       console.log(`Transaction sent via standard RPC: ${signature}`);
       

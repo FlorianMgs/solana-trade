@@ -6,6 +6,7 @@ import {
   getBuyTokenAmountFromSolAmount,
   getSellSolAmountFromTokenAmount,
 } from '@pump-fun/pump-sdk';
+import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 import { BuyParams, SellParams } from '../../interfaces/markets';
 
@@ -31,7 +32,12 @@ export class PumpFunClient {
 
     const sdkSlippagePercent = this.normalizeSlippagePercent(slippage);
     const global = await this.onlineSdk.fetchGlobal();
-    const { bondingCurveAccountInfo, bondingCurve, associatedUserAccountInfo } = await this.onlineSdk.fetchBuyState(mintAddress, wallet);
+    const tokenProgram = await this.resolveTokenProgram(mintAddress);
+    const { bondingCurveAccountInfo, bondingCurve, associatedUserAccountInfo } = await this.onlineSdk.fetchBuyState(
+      mintAddress,
+      wallet,
+      tokenProgram,
+    );
 
     const solAmountLamports = this.toLamportsBN(solAmount);
 
@@ -53,6 +59,7 @@ export class PumpFunClient {
       solAmount: solAmountLamports,
       amount: tokenAmount,
       slippage: sdkSlippagePercent,
+      tokenProgram,
     });
   }
 
@@ -64,7 +71,8 @@ export class PumpFunClient {
 
     const sdkSlippagePercent = this.normalizeSlippagePercent(slippage);
     const global = await this.onlineSdk.fetchGlobal();
-    const { bondingCurveAccountInfo, bondingCurve } = await this.onlineSdk.fetchSellState(mintAddress, wallet);
+    const tokenProgram = await this.resolveTokenProgram(mintAddress);
+    const { bondingCurveAccountInfo, bondingCurve } = await this.onlineSdk.fetchSellState(mintAddress, wallet, tokenProgram);
 
     const tokenAmountBaseUnits = this.toTokenBaseUnitsBN(tokenAmount);
 
@@ -85,6 +93,8 @@ export class PumpFunClient {
       amount: tokenAmountBaseUnits,
       solAmount: solAmountLamports,
       slippage: sdkSlippagePercent,
+      tokenProgram,
+      mayhemMode: !!bondingCurve.isMayhemMode,
     });
   }
 
@@ -130,6 +140,23 @@ export class PumpFunClient {
     }
     const percent = Math.round(fraction * 100);
     return Math.max(0, Math.min(100, percent));
+  }
+
+  private async resolveTokenProgram(mint: PublicKey): Promise<PublicKey> {
+    const accountInfo = await this.connection.getAccountInfo(mint, 'confirmed');
+    if (!accountInfo) {
+      throw new Error(`Mint account ${mint.toBase58()} not found`);
+    }
+
+    if (accountInfo.owner.equals(TOKEN_PROGRAM_ID)) {
+      return TOKEN_PROGRAM_ID;
+    }
+
+    if (accountInfo.owner.equals(TOKEN_2022_PROGRAM_ID)) {
+      return TOKEN_2022_PROGRAM_ID;
+    }
+
+    throw new Error(`Unsupported mint program owner ${accountInfo.owner.toBase58()} for ${mint.toBase58()}`);
   }
 }
 

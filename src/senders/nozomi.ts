@@ -29,19 +29,19 @@ export class NozomiSenderClient implements TransactionSenderClient {
     skipConfirmation: boolean = false
   ): Promise<string> {
     try {
-      if (!skipSimulation) {
-        const sim = await this.simulateTransaction(transaction);
-        if (!sim.success) {
-          throw new Error(`Simulation failed: ${JSON.stringify(sim.error)}`);
-        }
-      }
-
       const { blockhash, lastValidBlockHeight } = await this.connection.getLatestBlockhash('processed');
       transaction.recentBlockhash = blockhash;
       if (!transaction.feePayer) {
         transaction.feePayer = payer.publicKey;
       }
       transaction.sign(payer);
+
+      if (!skipSimulation) {
+        const sim = await this.simulateTransaction(transaction);
+        if (!sim.success) {
+          throw new Error(`Simulation failed: ${JSON.stringify(sim.error)}`);
+        }
+      }
 
       const encodedTx = serializeTransactionBase64(transaction);
 

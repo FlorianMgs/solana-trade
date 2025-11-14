@@ -53,8 +53,18 @@ export const serializeTransactionBase64 = (transaction: Transaction): string => 
 
 
 /**
- * Simulates a transaction to verify it will be accepted by the network
- * @param transaction - Transaction to simulate
+ * Simulates a transaction to verify it will be accepted by the network.
+ *
+ * IMPORTANT: The transaction is expected to be fully prepared before calling this:
+ * - `recentBlockhash` must already be set
+ * - `feePayer` must be set
+ * - all required signatures must be present
+ *
+ * We intentionally avoid the deprecated `connection.simulateTransaction(Transaction|Message)`
+ * helper and instead call the raw JSON-RPC `simulateTransaction` method with a
+ * base64-encoded, fully-signed transaction.
+ *
+ * @param transaction - Transaction to simulate (must be signed)
  * @param connection - Connection to use for simulation
  * @returns Detailed simulation results
  */
@@ -68,31 +78,80 @@ export const simulateTransaction = async (
   error: any;
 }> => {
   console.log('Simulating transaction before sending');
-  
+
   try {
-    // Make sure the transaction has a recent blockhash before simulation
-    if (!transaction.recentBlockhash) {
-      console.log('Setting fresh blockhash for simulation');
-      const { blockhash } = await connection.getLatestBlockhash('processed');
-      transaction.recentBlockhash = blockhash;
+    let wire: Buffer;
+    try {
+      // Require all signatures and verify them so we fail fast on malformed txs
+      const serialized = transaction.serialize({
+        requireAllSignatures: true,
+        verifySignatures: true,
+      });
+      wire = Buffer.from(serialized);
+    } catch (e: any) {
+      console.error('Failed to serialize transaction for simulation:', e);
+      return {
+        success: false,
+        result: null,
+        logs: [],
+        error:
+          e?.message ||
+          'Failed to serialize transaction for simulation. Ensure it is fully signed and has a recent blockhash.',
+      };
     }
-    
-    console.log('Running simulation with blockhash:', transaction.recentBlockhash);
-    const simulationResult = await connection.simulateTransaction(transaction);
-    
+
+    const encoded = wire.toString('base64');
+    const cfg: any = {
+      encoding: 'base64',
+      commitment: 'processed',
+      sigVerify: true,
+    };
+
+    console.log('Running simulation via raw RPC with sigVerify=true');
+    const rpc: any = await (connection as any)._rpcRequest('simulateTransaction', [
+      encoded,
+      cfg,
+    ]);
+
+    if (!rpc || typeof rpc !== 'object') {
+      console.error('Unexpected simulateTransaction RPC response shape:', rpc);
+      return {
+        success: false,
+        result: rpc,
+        logs: [],
+        error: 'simulateTransaction RPC returned an unexpected response shape',
+      };
+    }
+
+    if (rpc.error) {
+      console.error('simulateTransaction RPC error:', rpc.error);
+      return {
+        success: false,
+        result: null,
+        logs: [],
+        error: rpc.error.message ?? rpc.error,
+      };
+    }
+
+    const res = rpc.result; // { context, value }
+    const value = res?.value ?? {};
+
+    const logs = Array.isArray(value.logs) ? value.logs : [];
+    const err = value.err ?? null;
+
     return {
-      success: simulationResult.value.err === null,
-      result: simulationResult.value,
-      logs: simulationResult.value.logs || [],
-      error: simulationResult.value.err
+      success: err == null,
+      result: res,
+      logs,
+      error: err,
     };
   } catch (error: any) {
     console.error('Error during transaction simulation:', error);
     return {
       success: false,
-      error: error.message,
+      error: error?.message || error,
       result: null,
-      logs: []
+      logs: [],
     };
   }
 }
